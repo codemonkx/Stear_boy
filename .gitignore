@@ -1,4 +1,4 @@
-# Reference artifacts — never tracked
+# Reference artifacts - never tracked
 # Obtain from upstream; see reference/README.md for hashes.
 /reference/*.exe
 /reference/*.zip
@@ -9,6 +9,7 @@
 /decompile/
 /unpacked/
 *.decompiled.cs
+graphify-out/
 
 # .NET build output
 bin/

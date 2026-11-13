@@ -15,7 +15,8 @@ has not been produced. Linux has the equivalent capability in the kernel itself
 ## Status
 
 **Analysis complete, port not started.** See [`docs/triage.md`](docs/triage.md)
-for the full static analysis of the shipped binary.
+for the full static analysis of the shipped binary, and
+[`docs/plan.md`](docs/plan.md) for the phased port plan and tooling decisions.
 
 Short version:
 
