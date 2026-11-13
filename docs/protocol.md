@@ -40,10 +40,15 @@ or asks to be paired:
 PW2 PAIRME <name> <pairPort>
 ```
 
-`<name>` uses `_` for spaces (the UI shows spaces). Missing port defaults to
-7507 when parsed. The PC rebroadcasts to per-interface broadcast addresses plus
-link-local multicast every 4 s and remembers peers for 4 s of silence
-(*verify: `Expire()` timings*).
+`<name>` uses `_` for spaces (the UI shows spaces). A missing port defaults to
+7507. The Windows build parsed the name from token 3 rather than token 2, so the
+port accepts both shapes: `PW2 PAIRME <name> <pairPort> [<ipv6>]` and the
+extra-token form that quirk implied.
+
+The PC announces every 2 s to `255.255.255.255:5006` and to a per-interface
+broadcast address (recomputed every 4 s), and forgets a phone after 9 s of
+silence. Peer addresses are stored as plain IPv4 even though the pairing
+listener is dual-mode (IPv4-mapped `::ffff:a.b.c.d` is normalised).
 
 ## Pairing (TCP, ASCII lines, `\n` terminated)
 

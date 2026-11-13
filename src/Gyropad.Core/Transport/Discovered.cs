@@ -1,4 +1,4 @@
-namespace Gyropad.Core.Net;
+namespace Gyropad.Core.Transport;
 
 /// <summary>
 /// A phone seen on the LAN via the discovery broadcast.
