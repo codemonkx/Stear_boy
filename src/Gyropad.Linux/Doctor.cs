@@ -26,7 +26,7 @@ internal static class Doctor
         return ok ? 0 : 1;
     }
 
-    public static (bool Ok, IReadOnlyList<string> Lines) Collect()
+    public static (bool Ok, IReadOnlyList<string> Lines) Collect(bool skipPorts = false)
     {
         var lines = new List<string>();
         bool fatal = false;
@@ -101,31 +101,38 @@ internal static class Doctor
 
         Head("");
         Head("Network");
-        (bool udpIn, string udpInDetail) = UdpFree(Wire.PortInput);
-        if (udpIn)
-            Pass("input port " + Wire.PortInput, "free");
-        else
-            Warn("input port " + Wire.PortInput, udpInDetail + " (the app will pick another port)");
-
-        (bool udpDiscovery, string udpDiscoveryDetail) = UdpFree(Wire.PortDiscovery);
-        if (udpDiscovery)
-            Pass("discovery port " + Wire.PortDiscovery, "free");
-        else
-            Warn("discovery port " + Wire.PortDiscovery, udpDiscoveryDetail + " (phones may not appear)");
-
-        (bool tcpPair, string tcpPairDetail) = TcpFree(Wire.PortPair);
-        if (tcpPair)
-            Pass("pairing port " + Wire.PortPair, "free");
-        else
-            Warn("pairing port " + Wire.PortPair, tcpPairDetail + " (the app falls back to 5008-5011)");
-
-        foreach (int port in new[] { Wire.PortOutGauge, Wire.PortOutSim })
+        if (skipPorts)
         {
-            (bool free, string detail) = UdpFree(port);
-            if (free)
-                Pass("telemetry port " + port, "free");
+            Head("  skipped: the running app owns these ports");
+        }
+        else
+        {
+            (bool udpIn, string udpInDetail) = UdpFree(Wire.PortInput);
+            if (udpIn)
+                Pass("input port " + Wire.PortInput, "free");
             else
-                Warn("telemetry port " + port, detail);
+                Warn("input port " + Wire.PortInput, udpInDetail + " (the app will pick another port)");
+
+            (bool udpDiscovery, string udpDiscoveryDetail) = UdpFree(Wire.PortDiscovery);
+            if (udpDiscovery)
+                Pass("discovery port " + Wire.PortDiscovery, "free");
+            else
+                Warn("discovery port " + Wire.PortDiscovery, udpDiscoveryDetail + " (phones may not appear)");
+
+            (bool tcpPair, string tcpPairDetail) = TcpFree(Wire.PortPair);
+            if (tcpPair)
+                Pass("pairing port " + Wire.PortPair, "free");
+            else
+                Warn("pairing port " + Wire.PortPair, tcpPairDetail + " (the app falls back to 5008-5011)");
+
+            foreach (int port in new[] { Wire.PortOutGauge, Wire.PortOutSim })
+            {
+                (bool free, string detail) = UdpFree(port);
+                if (free)
+                    Pass("telemetry port " + port, "free");
+                else
+                    Warn("telemetry port " + port, detail);
+            }
         }
 
         Head("");

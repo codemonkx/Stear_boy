@@ -319,7 +319,7 @@ public partial class MainWindow : Window
 
     private void ShowDoctor()
     {
-        (bool ok, IReadOnlyList<string> lines) = Doctor.Collect();
+        (bool ok, IReadOnlyList<string> lines) = Doctor.Collect(skipPorts: true);
 
         var text = new TextBox
         {

@@ -77,8 +77,9 @@ Result: ready to run.
 ```
 
 The same checks are available from the app: **Run doctor** in the virtual device
-card opens the output in a window. That is handy when the app works but a game
-does not, because the report is already on screen.
+card opens the output in a window (network ports are skipped there because the
+running app holds them). That is handy when the app works but a game does not,
+because the report is already on screen.
 
 ## What the games see
 
