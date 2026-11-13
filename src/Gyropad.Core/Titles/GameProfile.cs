@@ -1,4 +1,4 @@
-namespace Gyropad.Core.Games;
+namespace Gyropad.Core.Titles;
 
 /// <summary>
 /// Per-title capabilities and button remapping. Defaults match the original
