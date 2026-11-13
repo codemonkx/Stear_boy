@@ -1,0 +1,30 @@
+# Reference artifacts — never tracked
+# Obtain from upstream; see reference/README.md for hashes.
+/reference/*.exe
+/reference/*.zip
+/reference/*.msi
+
+# Derived / regenerable output
+/extracted/
+/decompile/
+/unpacked/
+*.decompiled.cs
+
+# .NET build output
+bin/
+obj/
+[Bb]uild/
+[Aa]rtifacts/
+*.user
+*.suo
+
+# IDE / editor
+.vs/
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini

@@ -1,0 +1,9 @@
+# Normalize to LF on commit — this project targets Linux.
+* text=auto eol=lf
+
+# Explicit binary
+*.exe   binary
+*.dll   binary
+*.png   binary
+*.ico   binary
+*.svg   text
