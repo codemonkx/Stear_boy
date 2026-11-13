@@ -108,8 +108,11 @@ ilspycmd -p --nested-directories -o decompile "<...>\GyropadPC.exe"
 - The four open questions in `triage.md` are answered there:
   business logic is not trapped in `MainForm`; the phone handshake is
   OS-agnostic; `DriftAssist` reads only `OutSim`; `Store` is a flat INI.
-- Still to do: build the graphify graph over `decompile/` and confirm the module
-  boundaries match the code map.
+- The graph is built over `decompile/`: 639 nodes, 1,554 edges, 39 communities
+  (`graphify extract decompile --code-only`). Hubs confirm the code map:
+  `MainForm` (71 edges), `PadDiagram` (63), `Net` (60), `VJoyBridge` (53),
+  `ViGEmBridge` (27) — the two bridges are isolated leaves, which is exactly the
+  isolation the port depends on. `graphify-out/` is git-ignored.
 
 
 ## Phase 2 — Phone protocol specification
