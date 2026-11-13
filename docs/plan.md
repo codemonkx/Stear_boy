@@ -1,6 +1,6 @@
 # Port plan: Gyropad PC 1.39 → Linux
 
-Status: **planning complete, implementation not started.**
+Status: **Phase 1 in progress** — decompiled, code map and protocol spec written.
 
 This plan is derived from [`triage.md`](triage.md), which is itself derived from
 the shipped binary. Where the triage says "possible", this plan says how we
@@ -59,57 +59,58 @@ WinForms widgets. Everything else moves over nearly verbatim.
 
 ## Phase 0 — Tooling and reference
 
-Done already: `innounp` extraction, REA triage, repo scaffold, graphify install.
+Status: **done.**
 
-Remaining:
+- .NET SDK 8.0.428 and 10.0.404 installed; `ilspycmd` 11.2.0.10050 installed.
+- `innounp` extraction done; `reference/Gyropad-PC-Setup.exe` stays untracked with
+  hashes in [`../reference/README.md`](../reference/README.md).
+- Decompiled to `decompile/` with `ilspycmd -p --nested-directories` (45 C#
+  files, git-ignored).
+- Graph pipeline: `graphify` 0.9.108 working. The graph is worth building now
+  that the corpus is real C#; `graphify extract` → `cluster-only` →
+  `export html`, driven by the CLI because the skill's inline Python blocks do
+  not fit this Windows ARM64 host.
 
-- Install .NET SDK 8 (or 9) and `ilspycmd` on the analysis machine.
-- Keep `reference/Gyropad-PC-Setup.exe` untracked; hashes live in
-  [`../reference/README.md`](../reference/README.md).
-- Graph pipeline: the graph is only worth building **after** decompilation, when
-  the corpus is thousands of lines of C# instead of two markdown files.
-  `graphify extract` → `cluster-only` → `export html`, driven by the CLI because
-  the skill's inline Python blocks do not fit this Windows ARM64 host.
+Toolchain:
 
-Toolchain gaps to be honest about:
-
-| Need | Status on this machine |
+| Need | Status |
 |---|---|
-| .NET SDK | not installed |
-| `ilspycmd` | not installed |
-| Linux runtime for testing | not available (no WSL, no Docker, no VM) |
-| Native disassembler (Ghidra/IDA) | not needed; app is CIL-only |
+| .NET SDK | installed (8.0.428 + 10.0.404) |
+| `ilspycmd` | installed (11.2.0.10050) |
+| Linux runtime for testing | **not available on this machine, by decision** |
+| Native disassembler | not needed; app is CIL-only |
 
-Testing strategy given no Linux host yet:
+Testing decision: there is no WSL, Docker, or VM here. The port is therefore
+built and cross-published for `linux-x64` and `linux-arm64` from this machine,
+and the first real test happens on the user's Linux laptop. Consequences:
 
-1. GitHub Actions `ubuntu-latest` for build + unit tests + `dotnet format`.
-2. A Linux VM (or WSL2) for `uinput` and gamepad validation — these need a real
-   kernel, so CI alone is not enough.
-3. Until either exists, Phase 3 and earlier can be developed and unit-tested on
-   Windows because they are platform-agnostic.
+- Phases 1–3 can be developed and unit-tested on Windows (they are
+  platform-agnostic).
+- Phase 4 onwards cannot be executed here. Expect a feedback loop: build →
+  user runs → reports → fix. Keep `UinputBridge` small and heavily logged so
+  remote diagnosis is cheap.
+- CI (`ubuntu-latest`) still covers build + unit tests, and is the closest thing
+  to a Linux smoke test.
 
 ## Phase 1 — Decompile and map
 
-Commands (once `ilspycmd` is installed):
+Status: **largely done.** See [`code-map.md`](code-map.md).
+
+Commands used:
 
 ```powershell
-ilspycmd -p -o decompile "C:\...\gyropad-unpack\{app}\GyropadPC.exe"
+ilspycmd -p --nested-directories -o decompile "<...>\GyropadPC.exe"
 ```
 
-Work:
+- Decompiled project with cross-references intact.
+- `docs/code-map.md`: every named type assigned a layer and a verdict
+  (keep / adapt / rewrite / drop).
+- The four open questions in `triage.md` are answered there:
+  business logic is not trapped in `MainForm`; the phone handshake is
+  OS-agnostic; `DriftAssist` reads only `OutSim`; `Store` is a flat INI.
+- Still to do: build the graphify graph over `decompile/` and confirm the module
+  boundaries match the code map.
 
-- Decompile to a project, not a flat file dump, so cross-references survive.
-- Produce `docs/code-map.md`: one row per type with **layer**, **Windows
-  dependencies**, and **port verdict** (keep / adapt / rewrite / drop).
-- Confirm the four open questions in `triage.md`:
-  1. how much business logic sits inside `MainForm`,
-  2. whether the phone handshake carries Windows-specific fields,
-  3. whether `DriftAssist` reads raw HID anywhere,
-  4. what `Store` persists and where.
-- Build the graphify graph over `decompile/` and use it to find the real module
-  boundaries instead of trusting namespaces.
-
-Exit criteria: no unassigned types, no "unknown" in the verdict column.
 
 ## Phase 2 — Phone protocol specification
 
@@ -118,11 +119,11 @@ tested before any port code is written.
 
 - Read `Net`, `PortOwner`, `Discovered`, `Binding`, `Pad`, `Wheel`,
   `PhoneLayout`, `ModeReadout`.
-- Write `docs/protocol.md`: transport, ports, discovery broadcast, handshake,
-  packet layout (field offsets, endianness, scaling), heartbeat/timeout,
-  reconnection.
-- Capture real traffic from the Windows build with the actual phone app; keep
-  captures as text fixtures, not binaries.
+- `docs/protocol.md` is written from the decompiled source: transports, ports,
+  discovery lines, pair/hello exchange, all six UDP packet layouts, the tag
+  algorithm, dedup/liveness rules, and the telemetry packet.
+- Still to do: capture real traffic from the Windows build with the actual phone
+  app and confirm the *verify* items; keep captures as text fixtures.
 - Write a protocol harness that replays those fixtures. It must pass against the
   Windows build first, then against the port. That harness is the contract.
 
@@ -180,8 +181,12 @@ Design points:
 - Hot-plug robustness: game launches after the app, and game restarts must not
   require restarting Gyropad.
 
-Validation tools: `evdev-joystick`, `jstest`, `jstest-gtk`, SDL2 `controllermap`,
-and at least one supported title under Proton.
+Validation tools (on the user's machine): `evdev-joystick`, `jstest`,
+`jstest-gtk`, SDL2 `controllermap`, and at least one supported title under
+Proton. The build ships with a `--doctor` flag that dumps `/dev/uinput` access,
+created device capabilities, and the first N events, so a remote report is
+actionable without a debugger.
+
 
 Exit criteria: axis/button/hat readout matches the Windows device mapping table
 in `docs/protocol.md`; a game sees the device without a restart.
@@ -210,15 +215,17 @@ reachable only through Windows-only affordances.
 - Config in XDG paths, migrated from a Windows-style file if one is found.
 - Optional firewall helper (documented, never silently elevating).
 - Desktop entry + icon + autostart toggle.
-- Packaging: `.deb` and AppImage first; Flatpak later if the uinput access model
-  turns out to be acceptable.
+- Packaging: `dotnet publish -r linux-x64 --self-contained` (and `linux-arm64`)
+  produces a tarball that can be built here. AppImage and `.deb` are built in CI,
+  because they need Linux tooling.
 - Runtime dependency: `libevdev`/`libudev` only.
 
 Exit criteria: install, first-run, uninstall on a clean image; no root at runtime.
 
 ## Phase 7 — Validation
 
-Build a parity matrix from the supported-titles list in `triage.md`:
+Performed on the user's Linux laptop; this machine cannot run the binary. Build a
+parity matrix from the supported-titles list in `triage.md`:
 
 | Check | Windows reference | Linux port |
 |---|---|---|
@@ -249,11 +256,11 @@ Only after he has it does publishing become a separate decision.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Business logic entangled in `MainForm` | Phase 3 balloons | Measure in Phase 1 before committing to estimates |
-| Undocumented phone handshake quirks | Port cannot connect | Protocol capture in Phase 2, before code |
+| Business logic entangled in `MainForm` | Phase 3 balloons | Resolved: logic lives in `Net`/`Games` (see code map) |
+| Undocumented phone handshake quirks | Port cannot connect | Protocol spec written; confirm with capture before Phase 3 |
 | Device identity differs from vJoy/XInput | Some games ignore the pad | Test across titles early in Phase 4; expose configurable VID/PID |
 | UI port is larger than expected | Schedule | Port `Theme` + primitives first, ship a functional UI, refine |
-| No Linux test machine | Late discovery of kernel-level bugs | Stand up WSL2/VM before Phase 4 |
+| No Linux test machine | Bugs found only on user hardware | Small, logging-heavy `UinputBridge`; `--doctor` diagnostics; fast release loop |
 | Legal: no upstream license | Cannot publish | Private workspace; hand back to author, do not redistribute |
 
 ## Working notes

@@ -14,9 +14,12 @@ has not been produced. Linux has the equivalent capability in the kernel itself
 
 ## Status
 
-**Analysis complete, port not started.** See [`docs/triage.md`](docs/triage.md)
-for the full static analysis of the shipped binary, and
-[`docs/plan.md`](docs/plan.md) for the phased port plan and tooling decisions.
+**Analysis complete, decompiled, port not started.** See:
+
+- [`docs/triage.md`](docs/triage.md) — full static analysis of the shipped binary.
+- [`docs/code-map.md`](docs/code-map.md) — every decompiled type with a port verdict.
+- [`docs/protocol.md`](docs/protocol.md) — the phone protocol, reconstructed.
+- [`docs/plan.md`](docs/plan.md) — phased port plan and tooling decisions.
 
 Short version:
 
