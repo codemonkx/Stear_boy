@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gyropad.Core.Tests", "tests\Gyropad.Core.Tests\Gyropad.Core.Tests.csproj", "{610410A5-E9EF-42D9-B283-0FB25424ECDF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gyropad.Linux", "src\Gyropad.Linux\Gyropad.Linux.csproj", "{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,18 @@ Global
 		{610410A5-E9EF-42D9-B283-0FB25424ECDF}.Release|x64.Build.0 = Release|Any CPU
 		{610410A5-E9EF-42D9-B283-0FB25424ECDF}.Release|x86.ActiveCfg = Release|Any CPU
 		{610410A5-E9EF-42D9-B283-0FB25424ECDF}.Release|x86.Build.0 = Release|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Debug|x64.Build.0 = Debug|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Debug|x86.Build.0 = Debug|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Release|x64.ActiveCfg = Release|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Release|x64.Build.0 = Release|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Release|x86.ActiveCfg = Release|Any CPU
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,5 +66,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{B3CF256E-5D6D-4784-BCCA-3787B69AFFE2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{610410A5-E9EF-42D9-B283-0FB25424ECDF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{BC30B7A8-9F8D-40ED-85D2-19675E9DB849} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

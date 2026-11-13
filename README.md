@@ -1,7 +1,7 @@
 # Gyropad PC — Linux port
 
 A community Linux port of **Gyropad PC 1.39** by Sharper Studio, which turns a
-phone into a steering wheel for PC sim racing.
+phone into a steering wheel or gamepad for PC racing games.
 
 Upstream: <https://github.com/BilalShakoor/Gyropad>
 
@@ -14,39 +14,71 @@ has not been produced. Linux has the equivalent capability in the kernel itself
 
 ## Status
 
-**Analysis complete, decompiled, port not started.** See:
+The core and the desktop app are ported and the first release artifacts build:
 
-- [`docs/triage.md`](docs/triage.md) — full static analysis of the shipped binary.
+- phone discovery, pairing, token verification and the full 2.x input protocol;
+- wheel and gamepad personas on `uinput`, including the per-title routing and
+  drift assist;
+- OutGauge/OutSim telemetry, Linux game detection, and the original settings
+  file format;
+- an Avalonia desktop window with pairing approval, device status, discovered
+  phones and a built-in environment check (`--doctor`);
+- unit and loopback integration tests (63) that run on any OS;
+- self-contained `linux-x64` and `linux-arm64` tarballs built by CI.
+
+Runtime behaviour on a real Linux kernel is verified on the test machine of the
+port's author, not in this repository's CI, which has no uinput device. See
+[`docs/linux-setup.md`](docs/linux-setup.md) for installation and troubleshooting.
+
+## Install
+
+Download a release tarball and follow
+[`docs/linux-setup.md`](docs/linux-setup.md):
+
+```bash
+tar -xzf gyropad-1.39.0-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.0-linux-x64
+./Gyropad --doctor
+./Gyropad
+```
+
+The app is self-contained. If the doctor reports a permission problem, run
+`sudo ./install-udev-rule.sh` once.
+
+## Build from source
+
+Requires the .NET 8 SDK.
+
+```bash
+dotnet build Gyropad.sln
+dotnet test Gyropad.sln
+dotnet run --project src/Gyropad.Linux -- --doctor
+dotnet run --project src/Gyropad.Linux
+```
+
+Release tarballs (`dist/`, with checksums):
+
+```bash
+bash packaging/package.sh
+```
+
+## Docs
+
+- [`docs/linux-setup.md`](docs/linux-setup.md) — installation, permissions, games, troubleshooting.
+- [`docs/triage.md`](docs/triage.md) — static analysis of the shipped Windows binary.
 - [`docs/code-map.md`](docs/code-map.md) — every decompiled type with a port verdict.
 - [`docs/protocol.md`](docs/protocol.md) — the phone protocol, reconstructed.
 - [`docs/plan.md`](docs/plan.md) — phased port plan and tooling decisions.
 
-Short version:
-
-- The app is 100% managed .NET (CIL-only), 82 types / 555 methods, unobfuscated.
-- Every kernel-facing call is isolated in two classes: `ViGEmBridge` and
-  `VJoyBridge`.
-- Force feedback is not implemented, removing the hardest part of virtual
-  gamepad work.
-- The phone protocol is plain TCP/UDP, so the existing phone app needs no changes.
-
-## Planned shape
-
-| Windows | Linux |
-|---|---|
-| `ViGEmBridge` (IOCTL → ViGEmBus) | `UinputBridge` (evdev virtual gamepad) |
-| `VJoyBridge` (`vJoyInterface.dll`) | same `UinputBridge` |
-| WinForms + hand-painted widgets | Avalonia |
-| `netsh advfirewall` | nftables / ufw, or no-op |
-| Registry settings | XDG config (`~/.config/gyropad/`) |
-| Inno Setup `.exe` | AppImage / `.deb` / tarball |
-
 ## Layout
 
 ```
-docs/        analysis and design notes
-reference/   the original Windows build (not committed)
-src/         the port
+src/Gyropad.Core/    protocol, input model, config, telemetry, phone link, uinput
+src/Gyropad.Linux/   Avalonia app, pairing UI, --doctor
+tests/               xUnit tests (ABI, mappings, loopback phone link)
+packaging/           udev rule, installer, tarball script
+docs/                analysis, design and setup notes
+reference/           the original Windows build (not committed)
 ```
 
 ## Legal

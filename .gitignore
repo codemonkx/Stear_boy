@@ -8,6 +8,7 @@
 /extracted/
 /decompile/
 /unpacked/
+/dist/
 *.decompiled.cs
 graphify-out/
 

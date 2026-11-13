@@ -1,0 +1,4 @@
+# Gyropad needs write access to /dev/uinput to create its virtual wheel and
+# gamepad. TAG+="uaccess" grants access to the user of the active local
+# session, so no root run or extra group is needed.
+KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"

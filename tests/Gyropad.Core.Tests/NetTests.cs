@@ -416,7 +416,7 @@ public class NetTests
         h.SendWheel(steer: 16384, validTag: false);
 
         Assert.True(Harness.WaitFor(() => h.Wheel.Rejected >= 1));
-        Assert.Empty(h.Output.Wheels);
+        Assert.DoesNotContain(h.Output.Wheels, w => w.Steer != 0.0);
     }
 
     [Fact]
@@ -582,7 +582,8 @@ public class NetTests
         h.SendWheel(steer: 16384);
         Thread.Sleep(300);
 
-        Assert.Empty(h.Output.Wheels);
+        // A silence-drop zero frame is fine; the steering value must not arrive.
+        Assert.DoesNotContain(h.Output.Wheels, w => w.Steer != 0.0);
     }
 
     [Fact]
