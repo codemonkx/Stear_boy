@@ -636,7 +636,10 @@ public class NetTests
         Assert.True(h.Net.Connected);
 
         // LinkDeadMs is 2000; the input loop notices on its 250 ms timeout.
-        Assert.True(Harness.WaitFor(() => !h.Net.Connected, 8000));
+        // Wait for the whole teardown, not just the flag: DropIfStale flips
+        // Connected first and only then zeroes the devices.
+        Assert.True(Harness.WaitFor(
+            () => !h.Net.Connected && !h.Output.PadPlugged && !h.Net.UsingPad, 8000));
         Assert.False(h.Output.PadPlugged);
         Assert.False(h.Net.UsingPad);
         Assert.Contains("stopped responding", h.Net.StatusLine);
