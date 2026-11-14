@@ -16,6 +16,9 @@ public sealed class RuntimeStatus
 
     public int Pid { get; set; }
 
+    /// <summary>Gyropad version of the process that wrote this snapshot.</summary>
+    public string Version { get; set; } = "";
+
     public long StartedAtUnixMs { get; set; }
 
     /// <summary>"headless" or "window".</summary>

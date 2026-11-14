@@ -109,9 +109,20 @@ internal static class Report
             return;
         }
 
+        bool alive = RuntimeStatus.IsProcessAlive(status.Pid);
+        if (!alive)
+        {
+            text.AppendLine("stale     yes - pid " + status.Pid
+                + " is gone; the lines below describe a session that already ended");
+        }
+
+        text.AppendLine("version   " + (status.Version.Length > 0 ? status.Version : "unknown")
+            + (string.Equals(status.Version, AppInfo.Version, StringComparison.Ordinal)
+                ? ""
+                : "  (this report was made by " + AppInfo.Version + ")"));
         text.AppendLine("mode      " + status.Mode);
         text.AppendLine("pid       " + status.Pid
-            + (RuntimeStatus.IsProcessAlive(status.Pid) ? " (alive)" : " (not running; stale snapshot)"));
+            + (alive ? " (alive)" : " (not running)"));
         text.AppendLine("uptime    " + status.Uptime.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture));
         text.AppendLine("link      " + (status.Connected
             ? status.PadMode ? "connected, gamepad" : "connected, wheel"

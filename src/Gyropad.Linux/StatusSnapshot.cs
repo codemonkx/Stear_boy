@@ -24,6 +24,7 @@ internal static class StatusSnapshot
         return new RuntimeStatus
         {
             Pid = Environment.ProcessId,
+            Version = AppInfo.Version,
             StartedAtUnixMs = startedAtUnixMs,
             Mode = mode,
             Connected = net.Connected,

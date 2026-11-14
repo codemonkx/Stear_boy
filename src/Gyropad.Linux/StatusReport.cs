@@ -18,9 +18,16 @@ internal static class StatusReport
         }
 
         bool alive = RuntimeStatus.IsProcessAlive(status.Pid);
+        string runningVersion = status.Version.Length > 0 ? status.Version : "unknown";
 
-        Console.WriteLine("Gyropad " + AppInfo.Version + " - " + status.Mode
+        Console.WriteLine("Gyropad " + runningVersion + " - " + status.Mode
             + " - pid " + status.Pid + " - up " + FormatUptime(status.Uptime));
+
+        if (!string.Equals(status.Version, AppInfo.Version, StringComparison.Ordinal))
+        {
+            Console.WriteLine("binary     this command is " + AppInfo.Version
+                + "; the snapshot came from " + runningVersion);
+        }
 
         string link = status.Connected
             ? status.PadMode ? "connected, gamepad" : "connected, wheel"

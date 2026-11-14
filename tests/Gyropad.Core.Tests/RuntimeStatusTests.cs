@@ -36,6 +36,7 @@ public class RuntimeStatusTests : IDisposable
         var status = new RuntimeStatus
         {
             Pid = Environment.ProcessId,
+            Version = "1.39.4",
             StartedAtUnixMs = started,
             Mode = "headless",
             Connected = true,
@@ -70,6 +71,7 @@ public class RuntimeStatusTests : IDisposable
 
         Assert.NotNull(read);
         Assert.Equal(status.Pid, read!.Pid);
+        Assert.Equal("1.39.4", read.Version);
         Assert.Equal(started, read.StartedAtUnixMs);
         Assert.Equal("headless", read.Mode);
         Assert.True(read.Connected);

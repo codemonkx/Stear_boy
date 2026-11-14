@@ -1,4 +1,4 @@
-Gyropad 1.39.3 - Linux port
+Gyropad 1.39.4 - Linux port
 ===========================
 
 Turns your phone into a steering wheel or gamepad for PC racing games.
@@ -34,8 +34,8 @@ On the Linux machine run:
 
     uname -m
 
-  x86_64   -> gyropad-1.39.3-linux-x64.tar.gz
-  aarch64  -> gyropad-1.39.3-linux-arm64.tar.gz
+  x86_64   -> gyropad-1.39.4-linux-x64.tar.gz
+  aarch64  -> gyropad-1.39.4-linux-arm64.tar.gz
 
 Download it from the project's Releases page. The repository is private, so
 sign in first, or copy the file over from another machine.
@@ -44,8 +44,8 @@ sign in first, or copy the file over from another machine.
 1. Extract
 ----------
     mkdir -p ~/Applications
-    tar -xzf gyropad-1.39.3-linux-x64.tar.gz -C ~/Applications
-    cd ~/Applications/gyropad-1.39.3-linux-x64
+    tar -xzf gyropad-1.39.4-linux-x64.tar.gz -C ~/Applications
+    cd ~/Applications/gyropad-1.39.4-linux-x64
 
 Keep this folder: the app always runs from it.
 
@@ -296,6 +296,12 @@ A second instance is refused
     Another Gyropad is already running. ./Gyropad --status shows its pid;
     stop it first.
 
+--status shows an old error, or a different version
+    runtime.json is written by whichever instance is running. --status prints
+    the version that wrote it and says when the pid is gone. If the version
+    differs from ./Gyropad --version, an old build is still running: stop it
+    and start the new one.
+
 Diagnostics to include with a report:
 
     ls -l /dev/uinput
@@ -332,7 +338,7 @@ A systemd user service starts the headless link when you log in. Create
     After=network-online.target
 
     [Service]
-    ExecStart=%h/Applications/gyropad-1.39.3-linux-x64/Gyropad --headless --pair auto
+    ExecStart=%h/Applications/gyropad-1.39.4-linux-x64/Gyropad --headless --pair auto
     Restart=on-failure
 
     [Install]
@@ -353,7 +359,7 @@ in:
 
 12. Uninstall
 -------------
-    rm -rf ~/Applications/gyropad-1.39.3-linux-x64
+    rm -rf ~/Applications/gyropad-1.39.4-linux-x64
     rm -rf ~/.config/gyropad
 
 And, only if you installed the udev rule:
