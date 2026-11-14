@@ -1031,21 +1031,33 @@ public sealed class Net
     {
         for (int port = Wire.PortPair; port < Wire.PortPair + 5; port++)
         {
+            // Windows can report a successful bind even when another program
+            // already listens on the port (the existing socket set
+            // SO_REUSEADDR), but loopback connections still go to that program.
+            // The phone would then never reach us, so skip occupied ports.
+            if (TcpPortInUse(port))
+                continue;
+
             try
             {
                 try
                 {
                     _pairServer = new TcpListener(IPAddress.IPv6Any, port);
                     _pairServer.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                    // Lets the app restart immediately after a pairing connection
-                    // that is still in TIME_WAIT (common on Linux).
-                    _pairServer.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    // On Linux this lets the app restart immediately after a pairing
+                    // connection is still in TIME_WAIT. On Windows the same option
+                    // lets us bind a port another program already listens on, and
+                    // loopback connections then go to that program instead, so give
+                    // it a real answer by leaving it off there.
+                    if (!OperatingSystem.IsWindows())
+                        _pairServer.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                     _pairServer.Start();
                 }
                 catch
                 {
                     _pairServer = new TcpListener(IPAddress.Any, port);
-                    _pairServer.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    if (!OperatingSystem.IsWindows())
+                        _pairServer.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                     _pairServer.Start();
                 }
 
@@ -1082,6 +1094,22 @@ public sealed class Net
                 if (!_run)
                     break;
             }
+        }
+    }
+
+    private static bool TcpPortInUse(int port)
+    {
+        try
+        {
+            return IPGlobalProperties.GetIPGlobalProperties()
+                .GetActiveTcpListeners()
+                .Any(endpoint => endpoint.Port == port);
+        }
+        catch
+        {
+            // The table is a best-effort guard; a real bind conflict still
+            // falls through to the next candidate port.
+            return false;
         }
     }
 
