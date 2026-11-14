@@ -27,8 +27,8 @@ SDK.
 
 ```bash
 mkdir -p ~/Applications
-tar -xzf gyropad-1.39.2-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.2-linux-x64
+tar -xzf gyropad-1.39.3-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.3-linux-x64
 
 ./Gyropad --doctor          # environment check
 sudo ./install-udev-rule.sh # once, only if the doctor reports a permission problem
@@ -63,12 +63,14 @@ sudo usermod -aG input "$USER"   # log out and back in
 `./Gyropad --doctor` prints the runtime, kernel and architecture, whether
 `/dev/uinput` exists and is writable, whether the module is loaded, whether the
 Gyropad ports are free (with the owning process when one is found), whether the
-config directory is writable, and whether a desktop display is present. It exits
-non-zero when something would stop the app from working.
+config directory is writable, and whether a desktop display is present. It also
+creates both virtual devices for a moment and destroys them again, which is the
+only check that proves the kernel accepts their descriptions. It exits non-zero
+when something would stop the app from working.
 
 ```
 $ ./Gyropad --doctor
-Gyropad 1.39.2 doctor
+Gyropad 1.39.3 doctor
 
 System
   [ ok ] runtime  - .NET 8.0.x
@@ -79,9 +81,15 @@ System
 Virtual input (uinput)
   [ ok ] device node  - /dev/uinput
   [ ok ] access  - read/write
+  [ ok ] wheel device  - created and destroyed
+  [ ok ] gamepad device  - created and destroyed
 ...
 Result: ready to run.
 ```
+
+The device probe is the check that catches a rejected description (the kernel
+answers `EINVAL` at `UI_DEV_SETUP`), so a broken build fails here instead of
+later inside a game.
 
 The same checks are available from the app: **Run doctor** in the virtual device
 card opens the output in a window (network ports are skipped there because the
@@ -131,7 +139,7 @@ Description=Gyropad phone link
 After=network-online.target
 
 [Service]
-ExecStart=%h/Applications/gyropad-1.39.2-linux-x64/Gyropad --headless --pair auto
+ExecStart=%h/Applications/gyropad-1.39.3-linux-x64/Gyropad --headless --pair auto
 Restart=on-failure
 
 [Install]

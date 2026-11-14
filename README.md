@@ -38,8 +38,8 @@ Download a release tarball and follow
 [`docs/linux-setup.md`](docs/linux-setup.md):
 
 ```bash
-tar -xzf gyropad-1.39.2-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.2-linux-x64
+tar -xzf gyropad-1.39.3-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.3-linux-x64
 ./Gyropad --doctor
 ./Gyropad
 ```

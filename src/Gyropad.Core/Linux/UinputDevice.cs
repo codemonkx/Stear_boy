@@ -128,37 +128,21 @@ internal sealed class UinputDevice : IDisposable
                 return false;
             }
 
-            var setup = new UinputAbsSetup
-            {
-                Code = axis.Code,
-                Info = new InputAbsInfo
-                {
-                    Minimum = axis.Min,
-                    Maximum = axis.Max
-                }
-            };
-            if (!Check(SysIoctl(_fd, Uinput.AbsSetup, ref setup)))
+            // Encoded as bytes rather than a marshalled struct so the kernel's
+            // field order is explicit and testable.
+            byte[] setup = Uinput.BuildAbsSetup(axis);
+            if (!Check(SysIoctl(_fd, Uinput.AbsSetup, setup)))
             {
                 error = "could not describe axis 0x" + axis.Code.ToString("x") + " (" + DescribeErrno(Marshal.GetLastPInvokeError()) + ")";
                 return false;
             }
         }
 
-        var id = new InputId
-        {
-            BusType = 0x03, // BUS_USB
-            Vendor = vendor,
-            Product = product,
-            Version = version
-        };
-        var dev = new UinputSetup
-        {
-            Id = id,
-            EffectsMax = 0,
-            Name = name.Length > 79 ? name[..79] : name
-        };
-
-        if (!Check(SysIoctl(_fd, Uinput.DevSetup, ref dev)))
+        // Field order is part of the ABI here: id, name[80], ff_effects_max.
+        // A same-sized struct with the wrong order makes the kernel read a zero
+        // at name[0] and reject the whole description with EINVAL.
+        byte[] description = Uinput.BuildSetup(name, vendor, product, version);
+        if (!Check(SysIoctl(_fd, Uinput.DevSetup, description)))
         {
             error = "the kernel rejected the device description (" + DescribeErrno(Marshal.GetLastPInvokeError()) + ")";
             return false;
@@ -284,44 +268,6 @@ internal sealed class UinputDevice : IDisposable
         _ => "errno " + errno
     };
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct InputId
-    {
-        public ushort BusType;
-        public ushort Vendor;
-        public ushort Product;
-        public ushort Version;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct InputAbsInfo
-    {
-        public int Value;
-        public int Minimum;
-        public int Maximum;
-        public int Fuzz;
-        public int Flat;
-        public int Resolution;
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    private struct UinputSetup
-    {
-        public InputId Id;
-        public uint EffectsMax;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-        public string Name;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct UinputAbsSetup
-    {
-        public ushort Code;
-        public ushort Padding;
-        public InputAbsInfo Info;
-    }
-
     [DllImport("libc", SetLastError = true, EntryPoint = "open")]
     private static extern int SysOpen([MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags);
 
@@ -335,11 +281,8 @@ internal sealed class UinputDevice : IDisposable
     private static extern int SysIoctl(int fd, uint request);
 
     [DllImport("libc", SetLastError = true, EntryPoint = "ioctl")]
+    private static extern int SysIoctl(int fd, uint request, byte[] argument);
+
+    [DllImport("libc", SetLastError = true, EntryPoint = "ioctl")]
     private static extern int SysIoctl(int fd, uint request, int argument);
-
-    [DllImport("libc", SetLastError = true, EntryPoint = "ioctl")]
-    private static extern int SysIoctl(int fd, uint request, ref UinputSetup argument);
-
-    [DllImport("libc", SetLastError = true, EntryPoint = "ioctl")]
-    private static extern int SysIoctl(int fd, uint request, ref UinputAbsSetup argument);
 }

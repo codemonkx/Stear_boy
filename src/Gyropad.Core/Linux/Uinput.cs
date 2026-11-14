@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Gyropad.Core.Linux;
 
 /// <summary>
@@ -19,11 +21,17 @@ internal static class Uinput
     /// <summary><c>struct input_absinfo</c>: value, min, max, fuzz, flat, resolution.</summary>
     public const int AbsInfoSize = 24;
 
-    /// <summary><c>struct uinput_setup</c>: input_id (8) + effects max (4) + name[80].</summary>
+    /// <summary><c>struct uinput_setup</c>: input_id (8) + name[80] + effects max (4).</summary>
     public const int SetupSize = 92;
 
     /// <summary><c>struct uinput_abs_setup</c>: code (2) + pad (2) + absinfo (24).</summary>
     public const int AbsSetupSize = 28;
+
+    /// <summary>Where the kernel expects <c>name[0]</c> inside <c>struct uinput_setup</c>.</summary>
+    public const int SetupNameOffset = 8;
+
+    /// <summary>Where the kernel expects <c>ff_effects_max</c> inside <c>struct uinput_setup</c>.</summary>
+    public const int SetupEffectsOffset = 88;
 
     // Event types.
     public const ushort EvSyn = 0x00;
@@ -120,6 +128,68 @@ internal static class Uinput
 
     /// <summary>One axis plus the range clients will see.</summary>
     public readonly record struct Axis(ushort Code, int Min, int Max);
+
+    /// <summary>
+    /// Encodes <c>struct uinput_setup</c> exactly as the kernel reads it.
+    /// </summary>
+    /// <remarks>
+    /// Field order is part of the ABI: <c>input_id</c>, then <c>name[80]</c>,
+    /// then <c>ff_effects_max</c>. Encoding it as a marshalled struct with the
+    /// fields in a different order still yields the same 92-byte size, so the
+    /// ioctl number looks correct while the kernel reads a zero at
+    /// <c>name[0]</c> and rejects the description with EINVAL.
+    /// </remarks>
+    public static byte[] BuildSetup(string name, ushort vendor, ushort product, ushort version)
+    {
+        var buffer = new byte[SetupSize];
+
+        PutUInt16(buffer, 0, 0x03); // BUS_USB
+        PutUInt16(buffer, 2, vendor);
+        PutUInt16(buffer, 4, product);
+        PutUInt16(buffer, 6, version);
+
+        // The name must be terminated inside its 80 bytes; byte 79 stays zero.
+        byte[] text = Encoding.UTF8.GetBytes(name);
+        int length = Math.Min(text.Length, 79);
+        Array.Copy(text, 0, buffer, SetupNameOffset, length);
+
+        PutUInt32(buffer, SetupEffectsOffset, 0);
+        return buffer;
+    }
+
+    /// <summary>Encodes <c>struct uinput_abs_setup</c> for one axis.</summary>
+    public static byte[] BuildAbsSetup(Axis axis)
+    {
+        var buffer = new byte[AbsSetupSize];
+
+        PutUInt16(buffer, 0, axis.Code);
+        // Bytes 2-3 are the kernel's alignment padding and stay zero.
+        PutInt32(buffer, 4, 0);         // value
+        PutInt32(buffer, 8, axis.Min);  // minimum
+        PutInt32(buffer, 12, axis.Max); // maximum
+        PutInt32(buffer, 16, 0);        // fuzz
+        PutInt32(buffer, 20, 0);        // flat
+        PutInt32(buffer, 24, 0);        // resolution
+        return buffer;
+    }
+
+    private static void PutUInt16(byte[] buffer, int offset, ushort value)
+    {
+        buffer[offset] = (byte)value;
+        buffer[offset + 1] = (byte)(value >> 8);
+    }
+
+    private static void PutUInt32(byte[] buffer, int offset, uint value)
+    {
+        buffer[offset] = (byte)value;
+        buffer[offset + 1] = (byte)(value >> 8);
+        buffer[offset + 2] = (byte)(value >> 16);
+        buffer[offset + 3] = (byte)(value >> 24);
+    }
+
+    private static void PutInt32(byte[] buffer, int offset, int value)
+        => PutUInt32(buffer, offset, (uint)value);
+
 
     /// <summary>Signed stick axis: -1..1 to -32767..32767, centred on zero.</summary>
     public static int Stick(double value)

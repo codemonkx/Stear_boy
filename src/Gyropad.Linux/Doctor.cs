@@ -26,7 +26,7 @@ internal static class Doctor
         return ok ? 0 : 1;
     }
 
-    public static (bool Ok, IReadOnlyList<string> Lines) Collect(bool skipPorts = false)
+    public static (bool Ok, IReadOnlyList<string> Lines) Collect(bool skipPorts = false, bool probeDevices = true)
     {
         var lines = new List<string>();
         bool fatal = false;
@@ -60,6 +60,7 @@ internal static class Doctor
         Head("");
         Head("Virtual input (uinput)");
         string node = "/dev/uinput";
+        bool nodeWritable = false;
         if (!File.Exists(node))
         {
             Fail("device node", node + " is missing");
@@ -70,6 +71,7 @@ internal static class Doctor
         {
             Pass("device node", node);
             (bool writable, string why) = CanOpenForWrite(node);
+            nodeWritable = writable;
             if (writable)
                 Pass("access", "read/write");
             else
@@ -98,6 +100,24 @@ internal static class Doctor
             Pass("event devices", "/dev/input is present");
         else
             Warn("event devices", "/dev/input is missing; is this a container?");
+
+        if (probeDevices && nodeWritable)
+        {
+            // The only check that proves the descriptions are acceptable: the
+            // kernel validates them when the device is created. Both devices
+            // are destroyed again immediately.
+            (string wheelError, string padError) = UinputBridge.Probe();
+
+            if (wheelError.Length == 0)
+                Pass("wheel device", "created and destroyed");
+            else
+                Fail("wheel device", wheelError);
+
+            if (padError.Length == 0)
+                Pass("gamepad device", "created and destroyed");
+            else
+                Fail("gamepad device", padError);
+        }
 
         Head("");
         Head("Network");

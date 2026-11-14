@@ -1,4 +1,4 @@
-Gyropad 1.39.2 - Linux port
+Gyropad 1.39.3 - Linux port
 ===========================
 
 Turns your phone into a steering wheel or gamepad for PC racing games.
@@ -34,8 +34,8 @@ On the Linux machine run:
 
     uname -m
 
-  x86_64   -> gyropad-1.39.2-linux-x64.tar.gz
-  aarch64  -> gyropad-1.39.2-linux-arm64.tar.gz
+  x86_64   -> gyropad-1.39.3-linux-x64.tar.gz
+  aarch64  -> gyropad-1.39.3-linux-arm64.tar.gz
 
 Download it from the project's Releases page. The repository is private, so
 sign in first, or copy the file over from another machine.
@@ -44,8 +44,8 @@ sign in first, or copy the file over from another machine.
 1. Extract
 ----------
     mkdir -p ~/Applications
-    tar -xzf gyropad-1.39.2-linux-x64.tar.gz -C ~/Applications
-    cd ~/Applications/gyropad-1.39.2-linux-x64
+    tar -xzf gyropad-1.39.3-linux-x64.tar.gz -C ~/Applications
+    cd ~/Applications/gyropad-1.39.3-linux-x64
 
 Keep this folder: the app always runs from it.
 
@@ -59,6 +59,12 @@ Keep this folder: the app always runs from it.
 Expected last line:
 
     Result: ready to run.
+
+The doctor also creates both virtual devices for a moment and destroys them
+again, so these two lines are the real proof that the kernel accepts them:
+
+    [ ok ] wheel device  - created and destroyed
+    [ ok ] gamepad device  - created and destroyed
 
 If you instead see:
 
@@ -254,6 +260,11 @@ doctor says permission denied
     rule covers local logins; log out and back in, or add your user to the
     group that owns /dev/uinput.
 
+doctor says the kernel rejected the device description (EINVAL)
+    This affected versions before 1.39.3, where the device description was
+    sent with the wrong field order. Check ./Gyropad --version and use 1.39.3
+    or newer. If it still happens, send a report (section 8).
+
 Phone does not appear in the app
     Phone and PC on different networks or VLANs, guest Wi-Fi, or a VPN
     capturing all traffic. UDP 5006 must reach the PC. Try USB tethering.
@@ -321,7 +332,7 @@ A systemd user service starts the headless link when you log in. Create
     After=network-online.target
 
     [Service]
-    ExecStart=%h/Applications/gyropad-1.39.2-linux-x64/Gyropad --headless --pair auto
+    ExecStart=%h/Applications/gyropad-1.39.3-linux-x64/Gyropad --headless --pair auto
     Restart=on-failure
 
     [Install]
@@ -342,7 +353,7 @@ in:
 
 12. Uninstall
 -------------
-    rm -rf ~/Applications/gyropad-1.39.2-linux-x64
+    rm -rf ~/Applications/gyropad-1.39.3-linux-x64
     rm -rf ~/.config/gyropad
 
 And, only if you installed the udev rule:

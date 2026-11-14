@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Text;
 using Gyropad.Core.Linux;
 
 namespace Gyropad.Core.Tests;
@@ -25,9 +27,67 @@ public class UinputTests
     {
         Assert.Equal(24, Uinput.EventSize);    // input_event, 64-bit: 2 * long + u16 + u16 + s32
         Assert.Equal(24, Uinput.AbsInfoSize);  // 6 * s32
-        Assert.Equal(92, Uinput.SetupSize);    // input_id (8) + u32 + char[80]
+        Assert.Equal(92, Uinput.SetupSize);    // input_id (8) + char[80] + u32
         Assert.Equal(28, Uinput.AbsSetupSize); // u16 + pad + absinfo
     }
+
+    [Fact]
+    public void SetupBufferUsesTheKernelFieldOrder()
+    {
+        byte[] buffer = Uinput.BuildSetup("Gyropad Wheel", 0x1209, 0x0001, 0x0007);
+
+        Assert.Equal(Uinput.SetupSize, buffer.Length);
+        Assert.Equal(0x0003, U16(buffer, 0)); // BUS_USB
+        Assert.Equal(0x1209, U16(buffer, 2)); // vendor
+        Assert.Equal(0x0001, U16(buffer, 4)); // product
+        Assert.Equal(0x0007, U16(buffer, 6)); // version
+
+        // struct uinput_setup { struct input_id id; char name[80]; __u32 ff_effects_max; }
+        // The kernel rejects the whole description when name[0] is zero. A struct
+        // whose field order put ff_effects_max before the name still had the same
+        // 92-byte size, so the ioctl number looked right but creation failed EINVAL.
+        Assert.NotEqual(0, buffer[Uinput.SetupNameOffset]);
+        Assert.Equal("Gyropad Wheel", Encoding.UTF8.GetString(buffer, 8, 13));
+        Assert.Equal(0, buffer[8 + 13]); // NUL terminator
+        Assert.Equal(0u, U32(buffer, Uinput.SetupEffectsOffset));
+    }
+
+    [Fact]
+    public void LongDeviceNamesAreTruncatedInsideTheirField()
+    {
+        byte[] buffer = Uinput.BuildSetup(new string('x', 120), 1, 2, 3);
+
+        Assert.Equal(Uinput.SetupSize, buffer.Length);
+        Assert.Equal((byte)'x', buffer[8]);
+        Assert.Equal((byte)'x', buffer[8 + 78]);
+        Assert.Equal(0, buffer[8 + 79]); // still terminated inside name[80]
+        Assert.Equal(0u, U32(buffer, Uinput.SetupEffectsOffset));
+    }
+
+    [Fact]
+    public void AbsSetupBufferMatchesTheKernelLayout()
+    {
+        byte[] buffer = Uinput.BuildAbsSetup(new Uinput.Axis(Uinput.AbsZ, -32767, 32767));
+
+        Assert.Equal(Uinput.AbsSetupSize, buffer.Length);
+        Assert.Equal(Uinput.AbsZ, U16(buffer, 0));
+        Assert.Equal(0, U16(buffer, 2));      // alignment padding
+        Assert.Equal(0, S32(buffer, 4));      // value
+        Assert.Equal(-32767, S32(buffer, 8)); // minimum
+        Assert.Equal(32767, S32(buffer, 12)); // maximum
+        Assert.Equal(0, S32(buffer, 16));     // fuzz
+        Assert.Equal(0, S32(buffer, 20));     // flat
+        Assert.Equal(0, S32(buffer, 24));     // resolution
+    }
+
+    private static ushort U16(byte[] buffer, int offset)
+        => BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset));
+
+    private static uint U32(byte[] buffer, int offset)
+        => BinaryPrimitives.ReadUInt32LittleEndian(buffer.AsSpan(offset));
+
+    private static int S32(byte[] buffer, int offset)
+        => BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(offset));
 
     [Theory]
     [InlineData(-32767, -1.0, -32767)]

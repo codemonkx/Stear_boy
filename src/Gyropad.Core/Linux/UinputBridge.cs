@@ -143,6 +143,36 @@ public sealed class UinputBridge : IOutputDevice, IDisposable
         }
     }
 
+    /// <summary>
+    /// Creates both personas and destroys them again, so <c>--doctor</c> can
+    /// prove the kernel accepts their descriptions without a game running.
+    /// Each string is empty when the device was created successfully, or the
+    /// reason it was not.
+    /// </summary>
+    public static (string Wheel, string Pad) Probe()
+    {
+        string wheel = ProbeOne(WheelName, WheelVendor, WheelProduct, WheelVersion, WheelAxes, Uinput.WheelButtons);
+        string pad = ProbeOne(PadName, PadVendor, PadProduct, PadVersion, PadAxes, PadKeys);
+        return (wheel, pad);
+    }
+
+    private static string ProbeOne(
+        string name,
+        ushort vendor,
+        ushort product,
+        ushort version,
+        Uinput.Axis[] axes,
+        ushort[] keys)
+    {
+        UinputDevice? device = UinputDevice.TryCreate(
+            name, vendor, product, version, axes, keys, out string error);
+        if (device == null)
+            return error;
+
+        device.Dispose();
+        return "";
+    }
+
     public void PlugPad()
     {
         lock (_gate)
