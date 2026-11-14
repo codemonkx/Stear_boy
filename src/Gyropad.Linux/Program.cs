@@ -44,6 +44,9 @@ internal static class Program
         if (options.Unpair)
             return UnpairCommand.Run();
 
+        if (options.Report)
+            return Report.Run();
+
         using InstanceLock? guard = InstanceLock.TryAcquire(out string lockError, out string warning);
         if (guard == null)
         {

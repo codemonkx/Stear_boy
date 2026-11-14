@@ -22,8 +22,8 @@ SDK.
 
 ```bash
 mkdir -p ~/Applications
-tar -xzf gyropad-1.39.1-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.1-linux-x64
+tar -xzf gyropad-1.39.2-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.2-linux-x64
 
 ./Gyropad --doctor          # environment check
 sudo ./install-udev-rule.sh # once, only if the doctor reports a permission problem
@@ -63,7 +63,7 @@ non-zero when something would stop the app from working.
 
 ```
 $ ./Gyropad --doctor
-Gyropad 1.39.1 doctor
+Gyropad 1.39.2 doctor
 
 System
   [ ok ] runtime  - .NET 8.0.x
@@ -126,7 +126,7 @@ Description=Gyropad phone link
 After=network-online.target
 
 [Service]
-ExecStart=%h/Applications/gyropad-1.39.1-linux-x64/Gyropad --headless --pair auto
+ExecStart=%h/Applications/gyropad-1.39.2-linux-x64/Gyropad --headless --pair auto
 Restart=on-failure
 
 [Install]
@@ -225,6 +225,27 @@ lsmod | grep uinput
 cat /proc/bus/input/devices        # after the app created a device
 sudo evtest                        # pick the Gyropad device
 ```
+
+## Sending a bug report
+
+Run this on the machine that has the problem, from the folder where Gyropad is
+installed (not with `sudo`, so the file belongs to you):
+
+```bash
+./Gyropad --report
+```
+
+It writes `gyropad-report-YYYYMMDD-HHMMSS.txt` next to the binary. The file
+contains the doctor output, the running instance's status (`--status`), the
+settings file with the pairing token redacted, the capabilities of the Gyropad
+`/sys/class/input` devices, and the network interfaces (useful for USB
+tethering). Fill in the three lines at the top - what you did, what you
+expected, what happened - and send the whole file.
+
+It is safe to run while Gyropad is running; port checks are skipped in that
+case. If the problem is a wrong axis or button, also run `sudo evtest`, pick the
+`Gyropad Wheel` or `Microsoft X-Box 360 pad` entry, move one control at a time
+and include that output.
 
 ## Building from source
 

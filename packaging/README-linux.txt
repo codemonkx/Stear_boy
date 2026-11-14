@@ -14,8 +14,8 @@ Quick start
 1. Extract this folder somewhere permanent, for example:
 
        mkdir -p ~/Applications
-       tar -xzf gyropad-1.39.1-linux-x64.tar.gz -C ~/Applications
-       cd ~/Applications/gyropad-1.39.1-linux-x64
+       tar -xzf gyropad-1.39.2-linux-x64.tar.gz -C ~/Applications
+       cd ~/Applications/gyropad-1.39.2-linux-x64
 
 2. Check the environment:
 
@@ -59,5 +59,12 @@ be copied there unchanged.
 
 If something does not work
 --------------------------
-Run ./Gyropad --doctor and include its output in a bug report. Game-specific
-notes and manual steps are in docs/linux-setup.md in the source repository.
+Run ./Gyropad --doctor and include its output in a bug report. For a complete
+snapshot (doctor, live status, settings with the token redacted, device
+capabilities and network interfaces) run:
+
+       ./Gyropad --report
+
+That writes gyropad-report-*.txt next to the binary; fill in the three lines at
+the top and send the file. Game-specific notes and manual steps are in
+docs/linux-setup.md in the source repository.

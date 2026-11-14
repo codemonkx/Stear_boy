@@ -12,6 +12,9 @@
 *.decompiled.cs
 graphify-out/
 
+# Diagnostic reports written by --report
+gyropad-report-*.txt
+
 # .NET build output
 bin/
 obj/

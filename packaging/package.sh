@@ -9,7 +9,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 csproj="$root/src/Gyropad.Linux/Gyropad.Linux.csproj"
 version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$csproj" | head -n1)"
-version="${version:-1.39.1}"
+version="${version:-1.39.2}"
 
 if [ "$#" -gt 0 ]; then
     rids=("$@")

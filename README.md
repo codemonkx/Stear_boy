@@ -24,7 +24,7 @@ The core and the desktop app are ported and the first release artifacts build:
 - an Avalonia desktop window with pairing approval, device status, discovered
   phones and a built-in environment check (`--doctor`);
 - a headless CLI mode for SSH and minimal installs: `--headless`, `--pair`,
-  `--status`, `--unpair` and `--verbose`;
+  `--status`, `--unpair`, `--report` and `--verbose`;
 - unit and loopback integration tests (72) that run on any OS;
 - self-contained `linux-x64` and `linux-arm64` tarballs built by CI.
 
@@ -38,8 +38,8 @@ Download a release tarball and follow
 [`docs/linux-setup.md`](docs/linux-setup.md):
 
 ```bash
-tar -xzf gyropad-1.39.1-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.1-linux-x64
+tar -xzf gyropad-1.39.2-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.2-linux-x64
 ./Gyropad --doctor
 ./Gyropad
 ```
@@ -66,6 +66,7 @@ SSH, a minimal install or an autostart service:
 
 ./Gyropad --status                # inspect the running instance
 ./Gyropad --unpair                # forget the paired phone
+./Gyropad --report                # write a diagnostic report for a bug report
 ```
 
 Ctrl+C stops a headless session cleanly. `--pair ask` needs a terminal; with

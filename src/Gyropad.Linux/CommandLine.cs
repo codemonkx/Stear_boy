@@ -18,6 +18,7 @@ internal sealed class Options
     public bool Unpair;
     public bool Verbose;
     public bool Doctor;
+    public bool Report;
     public bool Version;
     public bool Help;
     public PairPolicy Pair = PairPolicy.Ask;
@@ -39,6 +40,7 @@ internal sealed class Options
           --verbose           print input values once a second
 
         One-shot:
+          --report            write gyropad-report-*.txt for a bug report
           --status            show the running instance (reads runtime.json)
           --unpair            forget the paired phone in settings.ini
           --version           print the version
@@ -68,6 +70,9 @@ internal sealed class Options
                     break;
                 case "--unpair":
                     options.Unpair = true;
+                    break;
+                case "--report":
+                    options.Report = true;
                     break;
                 case "--verbose":
                     options.Verbose = true;
@@ -115,6 +120,8 @@ internal sealed class Options
             actions.Add("--status");
         if (options.Unpair)
             actions.Add("--unpair");
+        if (options.Report)
+            actions.Add("--report");
         if (options.Headless)
             actions.Add("--headless");
 
