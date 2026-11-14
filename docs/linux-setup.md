@@ -1,5 +1,10 @@
 # Running Gyropad on Linux
 
+For the step-by-step first-run and testing guide, see
+[`../packaging/README-linux.txt`](../packaging/README-linux.txt) (shipped in the
+tarball as `README.txt`). This page is the deeper reference: permissions,
+device layout, configuration and troubleshooting.
+
 The Linux port replaces the two Windows kernel drivers (vJoy and ViGEmBus) with
 the kernel's own `uinput` interface. Nothing else about the app changes: the
 phone app, the wire protocol and the settings file stay the same as the Windows

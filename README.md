@@ -47,6 +47,10 @@ cd ~/Applications/gyropad-1.39.2-linux-x64
 The app is self-contained. If the doctor reports a permission problem, run
 `sudo ./install-udev-rule.sh` once.
 
+For a first run on a Linux machine, follow
+[`packaging/README-linux.txt`](packaging/README-linux.txt) step by step. It is
+also shipped inside every tarball as `README.txt`.
+
 ## Run
 
 The window needs a desktop session:
