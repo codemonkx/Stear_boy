@@ -13,6 +13,7 @@ using Avalonia.Threading;
 using Gyropad.Core.Config;
 using Gyropad.Core.Input;
 using Gyropad.Core.Linux;
+using Gyropad.Core.State;
 using Gyropad.Core.Telemetry;
 using Gyropad.Core.Titles;
 using Gyropad.Core.Transport;
@@ -35,6 +36,8 @@ public partial class MainWindow : Window
     private readonly UinputBridge _output = new();
     private readonly Net _net;
     private readonly DispatcherTimer _timer;
+    private readonly long _startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private long _lastStatusWrite;
 
     private readonly ObservableCollection<DeviceRow> _devices = [];
     private readonly List<string> _log = [];
@@ -85,6 +88,7 @@ public partial class MainWindow : Window
         _net.Start();
 
         Log("Started. " + _net.StatusLine);
+        PublishStatus();
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += (_, _) => Refresh();
@@ -101,6 +105,7 @@ public partial class MainWindow : Window
         _gauge.Stop();
         _sim.Stop();
         _output.Dispose();
+        RuntimeStatus.Clear();
         base.OnClosing(e);
     }
 
@@ -127,17 +132,7 @@ public partial class MainWindow : Window
         PhoneText.Text = _store.HasPeer ? Pretty(_store.PeerName) : "-";
         AddressText.Text = _store.PeerHost.Length > 0 ? _store.PeerHost : "-";
 
-        string persona;
-        if (!_net.Connected)
-            persona = _net.InputPort > 0 ? "waiting, port " + _net.InputPort : "starting";
-        else if (_net.PadMode)
-            persona = _net.PadBecauseGame
-                ? "gamepad, because " + _net.ActiveProfile.Name + " needs one"
-                : "gamepad (Xbox 360)";
-        else if (_net.WheelViaPad)
-            persona = "wheel translated to a gamepad for " + _net.ActiveProfile.Name;
-        else
-            persona = "wheel / joystick, port " + _net.InputPort;
+        string persona = StatusSnapshot.Persona(_net);
         PersonaText.Text = persona;
 
         string notes = string.Join("  ", new[] { _net.InputNote, _net.PairError }
@@ -163,6 +158,21 @@ public partial class MainWindow : Window
         }
 
         RefreshDevices();
+        PublishStatus();
+    }
+
+    /// <summary>
+    /// Publishes runtime.json for <c>--status</c>. Once a second is often enough
+    /// for a status view and keeps the config directory from churning.
+    /// </summary>
+    private void PublishStatus()
+    {
+        long now = Environment.TickCount64;
+        if (now - _lastStatusWrite < 1000)
+            return;
+
+        _lastStatusWrite = now;
+        StatusSnapshot.Capture("window", _store, _net, _output, _wheel, _pad, _startedAt).Write();
     }
 
     private string WheelSummary(string status) => status switch

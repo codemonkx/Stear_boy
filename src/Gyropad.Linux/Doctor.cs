@@ -161,7 +161,7 @@ internal static class Doctor
         if (wayland.Length > 0)
             Pass("Wayland display", wayland);
         if (display.Length == 0 && wayland.Length == 0)
-            Warn("display", "neither DISPLAY nor WAYLAND_DISPLAY is set; the window needs a desktop session");
+            Warn("display", "neither DISPLAY nor WAYLAND_DISPLAY is set; the window needs a desktop session (use --headless otherwise)");
 
         Head("");
         Head(fatal ? "Result: problems found. See the [fail] lines above." : "Result: ready to run.");

@@ -23,7 +23,9 @@ The core and the desktop app are ported and the first release artifacts build:
   file format;
 - an Avalonia desktop window with pairing approval, device status, discovered
   phones and a built-in environment check (`--doctor`);
-- unit and loopback integration tests (63) that run on any OS;
+- a headless CLI mode for SSH and minimal installs: `--headless`, `--pair`,
+  `--status`, `--unpair` and `--verbose`;
+- unit and loopback integration tests (72) that run on any OS;
 - self-contained `linux-x64` and `linux-arm64` tarballs built by CI.
 
 Runtime behaviour on a real Linux kernel is verified on the test machine of the
@@ -36,14 +38,39 @@ Download a release tarball and follow
 [`docs/linux-setup.md`](docs/linux-setup.md):
 
 ```bash
-tar -xzf gyropad-1.39.0-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.0-linux-x64
+tar -xzf gyropad-1.39.1-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.1-linux-x64
 ./Gyropad --doctor
 ./Gyropad
 ```
 
 The app is self-contained. If the doctor reports a permission problem, run
 `sudo ./install-udev-rule.sh` once.
+
+## Run
+
+The window needs a desktop session:
+
+```bash
+./Gyropad                 # window with pairing approval and device status
+./Gyropad --doctor        # environment check, exits non-zero on problems
+```
+
+Headless mode runs the same phone link and virtual devices without Avalonia, for
+SSH, a minimal install or an autostart service:
+
+```bash
+./Gyropad --headless --pair ask   # approve each pairing request on the terminal
+./Gyropad --headless --pair auto  # accept pairing requests unattended
+./Gyropad --headless --verbose    # print live input once a second
+
+./Gyropad --status                # inspect the running instance
+./Gyropad --unpair                # forget the paired phone
+```
+
+Ctrl+C stops a headless session cleanly. `--pair ask` needs a terminal; with
+redirected input it declines and points at `--pair auto`. A second instance is
+refused, and `--status` reports the pid and uptime of the one that is running.
 
 ## Build from source
 
@@ -54,6 +81,7 @@ dotnet build Gyropad.sln
 dotnet test Gyropad.sln
 dotnet run --project src/Gyropad.Linux -- --doctor
 dotnet run --project src/Gyropad.Linux
+dotnet run --project src/Gyropad.Linux -- --headless --pair auto
 ```
 
 Release tarballs (`dist/`, with checksums):
@@ -74,7 +102,7 @@ bash packaging/package.sh
 
 ```
 src/Gyropad.Core/    protocol, input model, config, telemetry, phone link, uinput
-src/Gyropad.Linux/   Avalonia app, pairing UI, --doctor
+src/Gyropad.Linux/   Avalonia app, headless CLI, --doctor
 tests/               xUnit tests (ABI, mappings, loopback phone link)
 packaging/           udev rule, installer, tarball script
 docs/                analysis, design and setup notes

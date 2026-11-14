@@ -10,7 +10,7 @@ build.
 | | |
 |---|---|
 | Architecture | 64-bit x86 (`linux-x64`) or ARM64 (`linux-arm64`) |
-| Desktop | X11 or Wayland session |
+| Desktop | X11 or Wayland for the window; not needed with `--headless` |
 | Kernel | `uinput` available (module or built in) |
 | Runtime | none - the release tarball is self-contained |
 
@@ -22,12 +22,14 @@ SDK.
 
 ```bash
 mkdir -p ~/Applications
-tar -xzf gyropad-1.39.0-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.0-linux-x64
+tar -xzf gyropad-1.39.1-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.1-linux-x64
 
 ./Gyropad --doctor          # environment check
 sudo ./install-udev-rule.sh # once, only if the doctor reports a permission problem
-./Gyropad
+./Gyropad                   # window
+# or, without a desktop session:
+./Gyropad --headless --pair auto
 ```
 
 `install-udev-rule.sh` does three things:
@@ -61,7 +63,7 @@ non-zero when something would stop the app from working.
 
 ```
 $ ./Gyropad --doctor
-Gyropad 1.39.0 doctor
+Gyropad 1.39.1 doctor
 
 System
   [ ok ] runtime  - .NET 8.0.x
@@ -80,6 +82,70 @@ The same checks are available from the app: **Run doctor** in the virtual device
 card opens the output in a window (network ports are skipped there because the
 running app holds them). That is handy when the app works but a game does not,
 because the report is already on screen.
+
+## Headless mode
+
+`--headless` starts the phone link, the `uinput` devices, telemetry and title
+detection without opening a window. It needs no X11/Wayland session, so it works
+over SSH and on minimal installs.
+
+```bash
+./Gyropad --headless                 # approve pairing on the terminal (default)
+./Gyropad --headless --pair auto     # accept every pairing request
+./Gyropad --headless --pair deny     # refuse every pairing request
+./Gyropad --headless --verbose       # print input once a second
+```
+
+The default policy is `ask`: a request prints the phone name and waits for
+`y`/`n` on the terminal. If stdin is not a terminal (systemd, a pipe, cron),
+`ask` declines the request and says so; use `--pair auto` for unattended runs.
+
+While a session runs it publishes `runtime.json` next to `settings.ini`. Two
+one-shot commands read or edit that state:
+
+```bash
+./Gyropad --status     # pid, uptime, link, ports, device, live input; exits 1 if none is running
+./Gyropad --unpair     # clears the stored phone and token
+```
+
+`--status` exits non-zero and explains that the file is stale when the pid is
+gone, so it is safe in scripts. `--unpair` warns when an instance is still
+running, because that process keeps the old token in memory until it restarts.
+
+Ctrl+C, `SIGINT`, `SIGTERM` and `SIGHUP` stop the session cleanly: the outputs
+are zeroed and `runtime.json` is removed. Only one instance (window or headless)
+may run per settings directory; a second one exits with the pid of the first.
+The lock is released by the kernel if a process crashes.
+
+### Autostart with systemd
+
+```ini
+# ~/.config/systemd/user/gyropad.service
+[Unit]
+Description=Gyropad phone link
+After=network-online.target
+
+[Service]
+ExecStart=%h/Applications/gyropad-1.39.1-linux-x64/Gyropad --headless --pair auto
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now gyropad
+./Gyropad --status
+```
+
+The packaged udev rule grants `/dev/uinput` through `uaccess`, which only applies
+to a local login session. For a service that starts at boot, add your user to the
+group that owns the node (usually `input`) instead, then log out and back in:
+
+```bash
+sudo usermod -aG input "$USER"
+```
 
 ## What the games see
 
@@ -146,6 +212,8 @@ and usually works when inbound traffic is blocked.
 | permission denied on `/dev/uinput` | udev rule missing, or your session is remote (uaccess only covers local sessions) |
 | phone not discovered | UDP 5006 blocked, phone and PC on different VLANs/guest Wi-Fi, or a VPN capturing all traffic |
 | app starts but no device in game | run the doctor; some titles need a restart after the device appears |
+| `Gyropad could not open a window` | no desktop session (SSH, headless server); use `./Gyropad --headless --pair auto` |
+| pairing is declined in headless mode | stdin is not a terminal, so `--pair ask` cannot prompt; use `--pair auto` |
 | gamepad is not detected by Steam | make sure the title is launched after Gyropad created the device; check `evtest` or `jstest` |
 | steering is inverted in one game | invert it in the game's own bindings; the axis sign matches vJoy on Windows |
 
@@ -164,6 +232,7 @@ sudo evtest                        # pick the Gyropad device
 dotnet build Gyropad.sln
 dotnet test Gyropad.sln
 dotnet run --project src/Gyropad.Linux
+dotnet run --project src/Gyropad.Linux -- --headless --pair auto
 ```
 
 Release tarballs:

@@ -1,12 +1,15 @@
 # Port plan: Gyropad PC 1.39 → Linux
 
-Status: **Phases 0-6 complete; validation pending on real Linux hardware.**
+Status: **Phases 0-6 complete, including a headless CLI; validation pending on
+real Linux hardware.**
 
-The core, `uinput` layer, Avalonia app, packaging and CI are in the repository.
-What remains is runtime validation on a Linux machine: `evtest`/`jstest` axis
-and button checks, then the game parity matrix (phase 7). The port's author
-tests that on their own laptop; this repository's CI can build and test the
-managed code but has no uinput device.
+The core, `uinput` layer, Avalonia app, headless mode, packaging and CI are in
+the repository. A desktop is optional: `--headless` provides the same link and
+devices from a terminal, with `--status`/`--unpair` for scripting and systemd
+autostart. What remains is runtime validation on a Linux machine:
+`evtest`/`jstest` axis and button checks, then the game parity matrix (phase 7).
+The port's author tests that on their own laptop; this repository's CI can build
+and test the managed code but has no uinput device.
 
 This plan is derived from [`triage.md`](triage.md), which is itself derived from
 the shipped binary. Where the triage says "possible", this plan says how we
