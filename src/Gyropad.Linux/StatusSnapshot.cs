@@ -30,6 +30,8 @@ internal static class StatusSnapshot
             Connected = net.Connected,
             PadMode = net.PadMode,
             WheelViaPad = net.WheelViaPad,
+            WheelOnPad = net.WheelOnPad,
+            WheelOnWheel = net.WheelOnWheel,
             PadBecauseGame = net.PadBecauseGame,
             Profile = net.ActiveProfile.Name,
             PeerName = store.PeerName,
@@ -71,8 +73,13 @@ internal static class StatusSnapshot
                 ? "gamepad, because " + net.ActiveProfile.Name + " needs one"
                 : "gamepad (Xbox 360)";
 
-        if (net.WheelViaPad)
-            return "wheel translated to a gamepad for " + net.ActiveProfile.Name;
+        if (net.WheelOnPad && net.WheelOnWheel)
+            return "wheel on the gamepad and the joystick";
+
+        if (net.WheelOnPad)
+            return net.PadBecauseGame
+                ? "wheel translated to a gamepad for " + net.ActiveProfile.Name
+                : "wheel translated to a gamepad";
 
         return "wheel / joystick, port " + net.InputPort;
     }

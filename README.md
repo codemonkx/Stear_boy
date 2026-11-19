@@ -18,14 +18,16 @@ The core and the desktop app are ported and the first release artifacts build:
 
 - phone discovery, pairing, token verification and the full 2.x input protocol;
 - wheel and gamepad personas on `uinput`, including the per-title routing and
-  drift assist;
+  drift assist; Racepad is written to the gamepad and the wheel joystick at the
+  same time, so a title works whichever of the two it reads (`--racepad`
+  overrides it per run);
 - OutGauge/OutSim telemetry, Linux game detection, and the original settings
   file format;
 - an Avalonia desktop window with pairing approval, device status, discovered
   phones and a built-in environment check (`--doctor`);
 - a headless CLI mode for SSH and minimal installs: `--headless`, `--pair`,
   `--status`, `--unpair`, `--report` and `--verbose`;
-- unit and loopback integration tests (72) that run on any OS;
+- unit and loopback integration tests (106) that run on any OS;
 - self-contained `linux-x64` and `linux-arm64` tarballs built by CI.
 
 Runtime behaviour on a real Linux kernel is verified on the test machine of the
@@ -38,8 +40,8 @@ Download a release tarball and follow
 [`docs/linux-setup.md`](docs/linux-setup.md):
 
 ```bash
-tar -xzf gyropad-1.39.6-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.6-linux-x64
+tar -xzf gyropad-1.39.7-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.7-linux-x64
 ./Gyropad --doctor
 ./Gyropad
 ```
@@ -67,6 +69,8 @@ SSH, a minimal install or an autostart service:
 ./Gyropad --headless --pair ask   # approve each pairing request on the terminal
 ./Gyropad --headless --pair auto  # accept pairing requests unattended
 ./Gyropad --headless --verbose    # print live input once a second
+./Gyropad --racepad pad           # Racepad to the Xbox pad only
+./Gyropad --racepad wheel         # Racepad to the wheel joystick only
 
 ./Gyropad --status                # inspect the running instance
 ./Gyropad --unpair                # forget the paired phone

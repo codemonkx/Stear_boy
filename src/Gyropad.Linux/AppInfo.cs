@@ -20,7 +20,7 @@ internal static class AppInfo
                 return plus > 0 ? informational[..plus] : informational;
             }
 
-            return assembly.GetName().Version?.ToString(3) ?? "1.39.6";
+            return assembly.GetName().Version?.ToString(3) ?? "1.39.7";
         }
     }
 }

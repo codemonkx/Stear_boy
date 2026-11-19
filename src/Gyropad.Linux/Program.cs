@@ -57,6 +57,8 @@ internal static class Program
         if (warning.Length > 0)
             Console.Error.WriteLine(warning);
 
+        RacepadOverride.Routing = options.Racepad;
+
         if (options.Headless)
             return Headless.Run(options);
 

@@ -27,8 +27,8 @@ SDK.
 
 ```bash
 mkdir -p ~/Applications
-tar -xzf gyropad-1.39.6-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.6-linux-x64
+tar -xzf gyropad-1.39.7-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.7-linux-x64
 
 ./Gyropad --doctor          # environment check
 sudo ./install-udev-rule.sh # once, only if the doctor reports a permission problem
@@ -70,7 +70,7 @@ when something would stop the app from working.
 
 ```
 $ ./Gyropad --doctor
-Gyropad 1.39.6 doctor
+Gyropad 1.39.7 doctor
 
 System
   [ ok ] runtime  - .NET 8.0.x
@@ -139,7 +139,7 @@ Description=Gyropad phone link
 After=network-online.target
 
 [Service]
-ExecStart=%h/Applications/gyropad-1.39.6-linux-x64/Gyropad --headless --pair auto
+ExecStart=%h/Applications/gyropad-1.39.7-linux-x64/Gyropad --headless --pair auto
 Restart=on-failure
 
 [Install]
@@ -178,15 +178,28 @@ start, guide, L3, R3) with two triggers and a hat, which is the layout SDL's
 built-in Xbox mapping expects. Steam, Proton and SDL-based titles detect it as a
 normal wired Xbox 360 controller.
 
-One deliberate difference from Windows: when a title is on the built-in
-"needs a gamepad" list (for example Forza), the wheel input is translated onto
-the gamepad device. Windows fed vJoy, which some titles ignore; on Linux the
-game gets the controller it asks for.
+### Where Racepad input goes
 
-Racepad is a wheel, so its device is a joystick rather than an Xbox
-controller. If a Racepad control does nothing in a game, run `--status` while
-moving it: the `packets` line proves the frames arrive, and the `route` line
-names the device the game must be pointed at.
+A wheel is a joystick on Linux, and many titles only read an Xbox controller.
+So by default every Racepad frame is written to **both** devices at once: the
+gamepad gets the translated values (steer on the left stick, throttle and brake
+on the triggers, buttons on the pad) and the wheel joystick gets the raw ones.
+A title works whichever of the two it reads, and no setting is needed.
+
+The gamepad is also created when Gyropad starts, before the wheel, so it is
+`/dev/input/event` number N and the wheel is N+1: titles that take "controller
+1" or scan devices in order find the Xbox pad first.
+
+Switch it per run when a title objects to one of them:
+
+```bash
+./Gyropad --racepad pad      # only the Xbox 360 pad (gamepad-only titles)
+./Gyropad --racepad wheel    # only the wheel joystick (wheel-aware titles)
+./Gyropad --racepad both     # the default
+```
+
+The choice can also be stored in `settings.ini` as `wheelRoute=both`, `pad` or
+`wheel`. `--status` prints the live choice on its `route` line.
 
 ## Configuration
 
@@ -203,6 +216,10 @@ build works unchanged. It stores the paired phone and token, assist strength and
 drift-assist tuning, and per-title device bindings. Settings sent by the phone
 (lock degrees, steering deadzone, lock-to-lock time) stay in memory only, which
 matches the Windows build.
+
+Two keys are worth knowing: `wheelRoute` (`both`, `pad` or `wheel`) is where
+Racepad input goes, and `forceWheel=1` keeps a title on the wheel joystick even
+when Gyropad would otherwise translate it for a gamepad-only title.
 
 ## Firewall
 
@@ -233,7 +250,7 @@ and usually works when inbound traffic is blocked.
 | `Gyropad could not open a window` | no desktop session (SSH, headless server); use `./Gyropad --headless --pair auto` |
 | pairing is declined in headless mode | stdin is not a terminal, so `--pair ask` cannot prompt; use `--pair auto` |
 | gamepad is not detected by Steam | make sure the title is launched after Gyropad created the device; check `evtest` or `jstest` |
-| Racepad does nothing in a game | run `--status` and read `route` and `packets`; bind the `Gyropad Wheel` joystick in the game, or use a title that gets the gamepad persona |
+| Racepad does nothing in a game | it is sent to the gamepad and the joystick by default; run `--status` and read `route`. If the title still ignores it, try `--racepad pad` or bind the `Gyropad Wheel` joystick |
 | analog sticks were upside down | fixed in 1.39.6; Linux counts the vertical axis downward, so both stick Y axes are flipped now |
 | steering is inverted in one game | invert it in the game's own bindings; the steering axis sign matches vJoy on Windows |
 

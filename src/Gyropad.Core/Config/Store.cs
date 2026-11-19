@@ -3,6 +3,22 @@ using System.Globalization;
 namespace Gyropad.Core.Config;
 
 /// <summary>
+/// Which virtual device Racepad (wheel) input is written to.
+/// <para>
+/// <see cref="Both"/> is the default: the Xbox 360 pad gets the translated
+/// values and the wheel joystick gets the raw ones, so a title works whether it
+/// reads a gamepad or a wheel. <see cref="Pad"/> is for titles that ignore a
+/// generic joystick, <see cref="Wheel"/> for titles that must see a real wheel.
+/// </para>
+/// </summary>
+public enum WheelRouting
+{
+    Both,
+    Pad,
+    Wheel
+}
+
+/// <summary>
 /// Persistent settings. The file format is the original flat INI, so an existing
 /// Windows settings file can be copied to the Linux config directory unchanged.
 /// Location: <c>$GYROPAD_CONFIG_DIR</c>, else <c>$XDG_CONFIG_HOME/gyropad</c>,
@@ -33,6 +49,9 @@ public sealed class Store
     public bool ForceWheel;
     public bool FirewallAsked;
     public string ForceWheelExe = "";
+
+    /// <summary>Where Racepad input goes. Default feeds both devices at once.</summary>
+    public WheelRouting WheelRoute = WheelRouting.Both;
 
     public volatile string WheelTrialExe = "";
     public volatile int WheelTrialUntil;
@@ -132,6 +151,14 @@ public sealed class Store
                     case "forceWheelExe":
                         ForceWheelExe = value;
                         break;
+                    case "wheelRoute":
+                        WheelRoute = value.ToLowerInvariant() switch
+                        {
+                            "pad" or "gamepad" => WheelRouting.Pad,
+                            "wheel" or "joystick" => WheelRouting.Wheel,
+                            _ => WheelRouting.Both
+                        };
+                        break;
                     case "driversAsked":
                         DriversAsked = value == "1";
                         break;
@@ -184,6 +211,12 @@ public sealed class Store
                 "forceWheel=" + (ForceWheel ? "1" : "0"),
                 "firewallAsked=" + (FirewallAsked ? "1" : "0"),
                 "forceWheelExe=" + ForceWheelExe,
+                "wheelRoute=" + WheelRoute switch
+                {
+                    WheelRouting.Pad => "pad",
+                    WheelRouting.Wheel => "wheel",
+                    _ => "both"
+                },
                 "driversAsked=" + (DriversAsked ? "1" : "0"),
                 "updateSkipped=" + UpdateSkipped
             };

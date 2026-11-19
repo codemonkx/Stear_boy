@@ -136,6 +136,11 @@ public sealed class UinputBridge : IOutputDevice, IDisposable
                 return;
             _started = true;
 
+            // The pad is created first on purpose. Linux numbers input devices
+            // in creation order, and a title that picks "controller 1" or scans
+            // /dev/input in order then finds the Xbox pad before the wheel.
+            PlugPad();
+
             _wheel = UinputDevice.TryCreate(
                 WheelName, WheelVendor, WheelProduct, WheelVersion,
                 WheelAxes, Uinput.WheelButtons, out string error);

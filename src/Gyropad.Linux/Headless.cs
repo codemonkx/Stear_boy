@@ -52,6 +52,7 @@ internal sealed class Headless
         _options = options;
 
         _store.Load();
+        RacepadOverride.Apply(_store);
         _assist.Strength = _store.AssistStrength;
         _assist.DeadbandDeg = _store.AssistDeadbandDeg;
         _assist.FullAtDeg = _store.AssistFullAtDeg;

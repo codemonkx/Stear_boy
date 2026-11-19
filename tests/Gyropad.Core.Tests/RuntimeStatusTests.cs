@@ -42,6 +42,8 @@ public class RuntimeStatusTests : IDisposable
             Connected = true,
             PadMode = true,
             WheelViaPad = true,
+            WheelOnPad = true,
+            WheelOnWheel = false,
             PadBecauseGame = true,
             Profile = "Forza Horizon 5",
             PeerName = "Pixel_7",
@@ -82,6 +84,8 @@ public class RuntimeStatusTests : IDisposable
         Assert.True(read.Connected);
         Assert.True(read.PadMode);
         Assert.True(read.WheelViaPad);
+        Assert.True(read.WheelOnPad);
+        Assert.False(read.WheelOnWheel);
         Assert.True(read.PadBecauseGame);
         Assert.Equal("Forza Horizon 5", read.Profile);
         Assert.Equal("Pixel_7", read.PeerName);
@@ -182,22 +186,24 @@ public class RuntimeStatusTests : IDisposable
     }
 
     [Theory]
-    [InlineData(false, false, false, false, "", 0, "starting")]
-    [InlineData(false, false, false, false, "", 5005, "waiting for the phone, port 5005")]
-    [InlineData(true, true, false, false, "Forza Horizon 5", 5005, "gamepad (Xbox 360)")]
-    [InlineData(true, true, false, true, "Forza Horizon 5", 5005, "gamepad, because Forza Horizon 5 needs one")]
-    [InlineData(true, false, true, false, "Forza Horizon 5", 5005, "wheel translated to a gamepad for Forza Horizon 5")]
-    [InlineData(true, false, true, false, "", 5005, "wheel translated to a gamepad for the running title")]
-    [InlineData(true, false, false, false, "", 5005, "wheel / joystick")]
+    [InlineData(false, false, false, false, false, "", 0, "starting")]
+    [InlineData(false, false, false, false, false, "", 5005, "waiting for the phone, port 5005")]
+    [InlineData(true, true, false, false, false, "Forza Horizon 5", 5005, "gamepad (Xbox 360)")]
+    [InlineData(true, true, false, true, false, "Forza Horizon 5", 5005, "gamepad, because Forza Horizon 5 needs one")]
+    [InlineData(true, false, true, false, true, "Forza Horizon 5", 5005, "wheel on the gamepad and the joystick")]
+    [InlineData(true, false, true, false, false, "Forza Horizon 5", 5005, "wheel translated to a gamepad")]
+    [InlineData(true, false, true, true, false, "Forza Horizon 5", 5005, "wheel translated to a gamepad for Forza Horizon 5")]
+    [InlineData(true, false, false, false, true, "", 5005, "wheel / joystick")]
     public void RouteDescriptionExplainsWhichDeviceGetsTheInput(
-        bool connected, bool padMode, bool wheelViaPad, bool padBecauseGame,
+        bool connected, bool padMode, bool onPad, bool padBecauseGame, bool onWheel,
         string profile, int port, string expected)
     {
         var status = new RuntimeStatus
         {
             Connected = connected,
             PadMode = padMode,
-            WheelViaPad = wheelViaPad,
+            WheelOnPad = onPad,
+            WheelOnWheel = onWheel,
             PadBecauseGame = padBecauseGame,
             Profile = profile,
             InputPort = port

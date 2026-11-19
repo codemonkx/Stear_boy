@@ -1,4 +1,4 @@
-﻿Gyropad 1.39.6 - Linux port
+Gyropad 1.39.7 - Linux port
 ===========================
 
 Turns your phone into a steering wheel or gamepad for PC racing games.
@@ -34,8 +34,8 @@ On the Linux machine run:
 
     uname -m
 
-  x86_64   -> gyropad-1.39.6-linux-x64.tar.gz
-  aarch64  -> gyropad-1.39.6-linux-arm64.tar.gz
+  x86_64   -> gyropad-1.39.7-linux-x64.tar.gz
+  aarch64  -> gyropad-1.39.7-linux-arm64.tar.gz
 
 Download it from the project's Releases page. The repository is private, so
 sign in first, or copy the file over from another machine.
@@ -44,8 +44,8 @@ sign in first, or copy the file over from another machine.
 1. Extract
 ----------
     mkdir -p ~/Applications
-    tar -xzf gyropad-1.39.6-linux-x64.tar.gz -C ~/Applications
-    cd ~/Applications/gyropad-1.39.6-linux-x64
+    tar -xzf gyropad-1.39.7-linux-x64.tar.gz -C ~/Applications
+    cd ~/Applications/gyropad-1.39.7-linux-x64
 
 Keep this folder: the app always runs from it.
 
@@ -170,18 +170,29 @@ jstest, from the "joystick" package, shows the same thing for /dev/input/jsN.
 While a control is moving, ./Gyropad --status prints two lines that say which
 device the phone input is driving:
 
-    route      wheel / joystick
+    route      wheel on the gamepad and the joystick
     packets    wheel 59/s, last 12 ms ago   gamepad none yet
 
 If "packets" stays at "none yet" in Racepad, the phone is not sending wheel
-frames. If it counts up but the game ignores the device, the route line names
-the device to select in the game's controls.
+frames. If it counts up, the route line names the devices receiving the input.
 
 
 6. Try a game
 -------------
 Start Gyropad first, then the game. The game should see a normal controller
 and need no driver or setup.
+
+Racepad, any title:
+    by default Racepad goes to the Xbox 360 pad and to the wheel joystick at
+    the same time. Games that only read a controller get steering on the left
+    stick and the pedals on the triggers; games that read a wheel get the real
+    axes. Nothing to configure.
+
+    If a title objects to one of the two, pick one for that run:
+
+        ./Gyropad --racepad pad        only the Xbox 360 pad
+        ./Gyropad --racepad wheel      only the wheel joystick
+        ./Gyropad --racepad both       the default
 
 Wheel mode:
     a racing title with wheel support, for example Dirt Rally, Assetto
@@ -198,7 +209,9 @@ configuration. If Steam does not list it, open Steam's controller settings
 while Gyropad is running.
 
 A game that was already open before the device appeared may need a restart.
-Gyropad itself does not need restarting.
+Gyropad itself does not need restarting. The virtual devices are created when
+Gyropad starts and stay until it exits, including when the phone drops off, so
+a reconnect never changes /dev/input/eventN.
 
 
 7. Optional checks
@@ -297,13 +310,12 @@ Steam does not detect the pad
     an Xbox 360 compatible device.
 
 Racepad works on the phone but the game ignores it
-    Run ./Gyropad --status while moving the wheel. The "packets" line proves
-    the phone data is arriving (wheel N/s) and the "route" line names the
-    device being fed. If route says "wheel / joystick", the game has to be
-    pointed at the "Gyropad Wheel" joystick in its own controls, because a
-    wheel is a joystick, not an Xbox controller. Titles on the built-in
-    "needs a gamepad" list (Forza, NFS, GRID, ...) already receive Racepad
-    input on the Xbox 360 device.
+    Racepad is sent to the Xbox 360 pad and to the wheel joystick at the same
+    time, so a title that reads only a controller already works. Run
+    ./Gyropad --status while moving the wheel. If "packets" counts up and the
+    game still does nothing, try ./Gyropad --racepad pad, and check that the
+    game was started after Gyropad. If the game has a controls screen, binding
+    the "Gyropad Wheel" joystick also works.
 
 Sticks were upside down before 1.39.6
     Fixed in 1.39.6. Left/right was correct, but up and down were reversed on
@@ -367,7 +379,7 @@ A systemd user service starts the headless link when you log in. Create
     After=network-online.target
 
     [Service]
-    ExecStart=%h/Applications/gyropad-1.39.6-linux-x64/Gyropad --headless --pair auto
+    ExecStart=%h/Applications/gyropad-1.39.7-linux-x64/Gyropad --headless --pair auto
     Restart=on-failure
 
     [Install]
@@ -388,7 +400,7 @@ in:
 
 12. Uninstall
 -------------
-    rm -rf ~/Applications/gyropad-1.39.6-linux-x64
+    rm -rf ~/Applications/gyropad-1.39.7-linux-x64
     rm -rf ~/.config/gyropad
 
 And, only if you installed the udev rule:

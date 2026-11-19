@@ -388,8 +388,13 @@ public class NetTests
         Assert.Equal(0b10, frame.Buttons);
         Assert.True(h.Net.Connected);
         Assert.Equal("Connected", h.Net.StatusLine);
-        Assert.False(h.Output.PadPlugged);
-        Assert.False(h.Net.UsingPad);
+
+        // Default routing feeds both devices, so the pad is present as well.
+        Assert.True(h.Output.PadPlugged);
+        Assert.True(h.Net.WheelOnPad);
+        Assert.True(h.Net.WheelOnWheel);
+        Assert.False(h.Net.UsingPad); // the phone still shows its wheel face
+        Assert.True(Harness.WaitFor(() => h.Output.LastPad != null));
 
         // The diagnostics in --status use these to prove which packet family arrives.
         Assert.True(Harness.WaitFor(() => h.Net.LastWheelAt != 0));
@@ -435,7 +440,7 @@ public class NetTests
         h.SendPad(lx: 16384, ly: -16384, rx: 0, ry: 8192, lt: 65535, rt: 32768,
             buttons: 1, hat: 2);
 
-        Assert.True(Harness.WaitFor(() => h.Output.LastPad != null));
+        Assert.True(Harness.WaitFor(() => h.Net.PadMode && h.Output.LastPad is { Ly: > 0.4 }));
         PadFrame frame = h.Output.LastPad!;
         Assert.Equal(0.5, frame.Lx, 3);
         Assert.Equal(0.5, frame.Ly, 3);   // the pad path inverts Y
@@ -459,25 +464,87 @@ public class NetTests
     }
 
     [Fact]
-    public void WheelPacketIsTranslatedForTitlesThatNeedAPad()
+    public void RacepadFeedsTheGamepadAndTheWheelByDefault()
     {
         using var h = new Harness();
+        h.PairAndWait();
+
+        h.SendWheel(steer: 16384, thr: 32767, brk: 6553);
+
+        Assert.True(Harness.WaitFor(() => h.Output.LastWheel is { Steer: > 0.4 }
+                                       && h.Output.LastPad != null));
+
+        // The wheel joystick gets the raw vJoy order.
+        WheelFrame wheel = h.Output.LastWheel!;
+        Assert.Equal(0.5, wheel.Steer, 3);
+        Assert.Equal(0.5, wheel.Thr, 3);
+        Assert.Equal(0.1, wheel.Brk, 3);
+
+        // The pad gets the translated one, so a gamepad-only title works.
+        PadFrame pad = h.Output.LastPad!;
+        Assert.Equal(0.5, pad.Lx, 3);
+        Assert.Equal(0.1, pad.Lt, 3);
+        Assert.Equal(0.5, pad.Rt, 3);
+
+        Assert.True(h.Net.WheelOnPad);
+        Assert.True(h.Net.WheelOnWheel);
+        Assert.False(h.Net.UsingPad);
+    }
+
+    [Fact]
+    public void RacepadCanBeRestrictedToTheWheelJoystick()
+    {
+        using var h = new Harness();
+        h.Store.WheelRoute = WheelRouting.Wheel;
+        h.PairAndWait();
+
+        h.SendWheel(steer: 16384);
+
+        Assert.True(Harness.WaitFor(() => h.Output.LastWheel is { Steer: > 0.4 }));
+        Assert.True(h.Net.WheelOnWheel);
+        Assert.False(h.Net.WheelOnPad);
+        Assert.DoesNotContain(h.Output.Pads, p => p.Lx != 0.0);
+    }
+
+    [Fact]
+    public void RacepadCanBeRestrictedToTheGamepad()
+    {
+        using var h = new Harness();
+        h.Store.WheelRoute = WheelRouting.Pad;
+        h.PairAndWait();
+
+        h.SendWheel(steer: 16384, thr: 32767);
+
+        Assert.True(Harness.WaitFor(() => h.Output.LastPad is { Lx: > 0.4 }));
+        Assert.True(h.Net.WheelOnPad);
+        Assert.False(h.Net.WheelOnWheel);
+        Assert.True(h.Net.UsingPad);
+        Assert.DoesNotContain(h.Output.Wheels, w => w.Steer != 0.0);
+    }
+
+    [Fact]
+    public void ATitleThatNeedsAPadGetsOneEvenWhenRacepadIsPinnedToTheWheel()
+    {
+        using var h = new Harness();
+        h.Store.WheelRoute = WheelRouting.Wheel;
         h.PairAndWait();
         UseGame("forzamotorsport7");
 
         h.SendWheel(steer: 16384, thr: 32767, brk: 6553);
 
-        Assert.True(Harness.WaitFor(() => h.Output.LastPad != null));
+        Assert.True(Harness.WaitFor(() => h.Output.LastPad is { Lx: > 0.4 }));
         PadFrame frame = h.Output.LastPad!;
         Assert.Equal(0.5, frame.Lx, 3);
         Assert.Equal(0.0, frame.Ly, 3);
         Assert.Equal(0.1, frame.Lt, 3);   // brake on the left trigger
         Assert.Equal(0.5, frame.Rt, 3);   // throttle on the right trigger
 
+        // The title needs a pad, so it gets one as well as the joystick.
         Assert.True(h.Output.PadPlugged);
+        Assert.True(h.Net.WheelOnPad);
+        Assert.True(h.Net.WheelOnWheel);
         Assert.True(h.Net.WheelViaPad);
         Assert.True(h.Net.PadBecauseGame);
-        Assert.True(h.Net.UsingPad);
         Assert.Equal("Forza Motorsport 7", h.Net.ActiveProfile.Name);
     }
 
@@ -646,10 +713,14 @@ public class NetTests
         // Wait for the whole teardown, not just the flag: DropIfStale flips
         // Connected first and only then zeroes the devices.
         Assert.True(Harness.WaitFor(
-            () => !h.Net.Connected && !h.Output.PadPlugged && !h.Net.UsingPad, 8000));
-        Assert.False(h.Output.PadPlugged);
+            () => !h.Net.Connected && !h.Net.UsingPad
+                  && h.Output.LastPad is { Lx: 0.0, Buttons: 0 }, 8000));
         Assert.False(h.Net.UsingPad);
         Assert.Contains("stopped responding", h.Net.StatusLine);
         Assert.Equal(0, h.Wheel.SteerRaw);
+
+        // The pad device stays plugged so a reconnect reuses the same
+        // /dev/input node instead of appearing as a new controller.
+        Assert.True(h.Output.PadPlugged);
     }
 }

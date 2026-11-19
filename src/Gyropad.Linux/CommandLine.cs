@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gyropad.Core.Config;
 
 namespace Gyropad.Linux;
 
@@ -8,6 +9,22 @@ internal enum PairPolicy
     Ask,
     Auto,
     Deny
+}
+
+/// <summary>
+/// The <c>--racepad</c> choice for this run. Avalonia builds the window through
+/// XAML, so the parsed option cannot be handed to its constructor; this static
+/// carries it instead of writing an unsaved override back to settings.ini.
+/// </summary>
+internal static class RacepadOverride
+{
+    public static WheelRouting? Routing;
+
+    public static void Apply(Store store)
+    {
+        if (Routing is { } routing)
+            store.WheelRoute = routing;
+    }
 }
 
 /// <summary>Parsed command line. See <see cref="Usage"/> for the text users see.</summary>
@@ -23,6 +40,9 @@ internal sealed class Options
     public bool Help;
     public PairPolicy Pair = PairPolicy.Ask;
 
+    /// <summary>Set only when <c>--racepad</c> was given on the command line.</summary>
+    public WheelRouting? Racepad;
+
     public const string Usage = """
         Gyropad - Linux port
 
@@ -37,6 +57,9 @@ internal sealed class Options
           --pair ask          approve pairing on the terminal (default)
           --pair auto         approve every pairing request
           --pair deny         refuse every pairing request
+          --racepad both      send Racepad to the gamepad and the wheel (default)
+          --racepad pad       send Racepad only to the Xbox 360 pad
+          --racepad wheel     send Racepad only to the wheel joystick
           --verbose           print input values once a second
 
         One-shot:
@@ -100,10 +123,27 @@ internal sealed class Options
                     if (!TryPair(args[++i], out options.Pair, out error))
                         return false;
                     break;
+                case "--racepad":
+                    if (i + 1 >= args.Length)
+                    {
+                        error = "--racepad needs a value: both, pad or wheel";
+                        return false;
+                    }
+
+                    if (!TryRacepad(args[++i], out options.Racepad, out error))
+                        return false;
+                    break;
                 default:
                     if (arg.StartsWith("--pair=", StringComparison.Ordinal))
                     {
                         if (!TryPair(arg["--pair=".Length..], out options.Pair, out error))
+                            return false;
+                        break;
+                    }
+
+                    if (arg.StartsWith("--racepad=", StringComparison.Ordinal))
+                    {
+                        if (!TryRacepad(arg["--racepad=".Length..], out options.Racepad, out error))
                             return false;
                         break;
                     }
@@ -153,6 +193,30 @@ internal sealed class Options
             default:
                 policy = PairPolicy.Ask;
                 error = "--pair must be ask, auto or deny";
+                return false;
+        }
+    }
+
+    private static bool TryRacepad(string value, out WheelRouting? routing, out string error)
+    {
+        error = "";
+        switch (value.ToLowerInvariant())
+        {
+            case "both":
+            case "auto":
+                routing = WheelRouting.Both;
+                return true;
+            case "pad":
+            case "gamepad":
+                routing = WheelRouting.Pad;
+                return true;
+            case "wheel":
+            case "joystick":
+                routing = WheelRouting.Wheel;
+                return true;
+            default:
+                routing = null;
+                error = "--racepad must be both, pad or wheel";
                 return false;
         }
     }

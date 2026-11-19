@@ -30,6 +30,12 @@ public sealed class RuntimeStatus
 
     public bool WheelViaPad { get; set; }
 
+    /// <summary>Racepad values are on the Xbox pad device.</summary>
+    public bool WheelOnPad { get; set; }
+
+    /// <summary>Racepad values are on the wheel joystick.</summary>
+    public bool WheelOnWheel { get; set; }
+
     public bool PadBecauseGame { get; set; }
 
     /// <summary>Matched title name, or empty when the generic profile applies.</summary>
@@ -107,8 +113,13 @@ public sealed class RuntimeStatus
                     ? "gamepad, because " + game + " needs one"
                     : "gamepad (Xbox 360)";
 
-            if (WheelViaPad)
-                return "wheel translated to a gamepad for " + game;
+            if (WheelOnPad && WheelOnWheel)
+                return "wheel on the gamepad and the joystick";
+
+            if (WheelOnPad)
+                return PadBecauseGame
+                    ? "wheel translated to a gamepad for " + game
+                    : "wheel translated to a gamepad";
 
             return "wheel / joystick";
         }

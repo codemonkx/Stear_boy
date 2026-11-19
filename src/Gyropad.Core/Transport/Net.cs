@@ -64,6 +64,12 @@ public sealed class Net
     public volatile bool WheelViaPad;
     public volatile bool PadBecauseGame;
 
+    /// <summary>Racepad values are currently on the Xbox pad device.</summary>
+    public volatile bool WheelOnPad;
+
+    /// <summary>Racepad values are currently on the wheel joystick.</summary>
+    public volatile bool WheelOnWheel;
+
     public GameProfile ActiveProfile = Games.Generic;
 
     public volatile string StatusLine = "Open Gyropad on your phone and tap Connect";
@@ -259,36 +265,87 @@ public sealed class Net
         GameProfile current = Games.Current;
         bool wheelMissing = !Output.WheelReady;
         bool forced = WheelForced(current);
-        bool usePad = isPad || wheelMissing || (current.NeedsPad && !forced);
 
-        WheelViaPad = !isPad && usePad;
-        PadBecauseGame = !isPad && !wheelMissing && current.NeedsPad && !forced;
-        ActiveProfile = current;
-        UsingPad = usePad;
+        if (isPad)
+        {
+            // The pad persona is its own device; steering the wheel joystick
+            // with a stick would double the axes for anything reading both.
+            WheelOnPad = true;
+            WheelOnWheel = false;
+            WheelViaPad = false;
+            PadBecauseGame = current.NeedsPad && !forced;
+            ActiveProfile = current;
+            UsingPad = true;
+            PlugPadNow();
+            FeedPadFace();
+            return;
+        }
 
-        if (usePad)
+        // Racepad. By default the same values go to the Xbox pad *and* to the
+        // wheel joystick, so a title works whichever of the two it reads: the
+        // pad is what every gamepad-only title accepts, the joystick is what a
+        // wheel-aware title binds. Titles that need a pad still get it.
+        bool wantPad = _store.WheelRoute != WheelRouting.Wheel || (current.NeedsPad && !forced);
+        bool wantWheel = _store.WheelRoute != WheelRouting.Pad;
+
+        if (wantPad)
         {
             if (!Output.PadPlugged)
                 Output.PlugPad();
 
-            if (isPad)
-                FeedPadFace();
-            else
-                FeedWheelAsPad(current.PadFallback ?? current);
-            return;
+            // A failed pad must not leave Racepad with nowhere to go.
+            if (!Output.PadPlugged)
+                wantPad = false;
         }
 
-        if (Output.PadPlugged)
-            Output.UnplugPad();
+        if (wantWheel && wheelMissing)
+            wantWheel = false;
+
+        // One of the two devices has to be alive, or input is silently dropped.
+        if (!wantPad && !wantWheel)
+        {
+            if (!wheelMissing)
+                wantWheel = true;
+            else
+                wantPad = Output.PadPlugged;
+        }
+
+        WheelOnPad = wantPad;
+        WheelOnWheel = wantWheel;
+        WheelViaPad = wantPad;
+        PadBecauseGame = wantPad && current.NeedsPad && !forced;
+        ActiveProfile = current;
+
+        // "Using pad" tells the phone its face is being laid out as a gamepad.
+        // When the wheel joystick is still fed, the phone keeps its wheel face.
+        UsingPad = wantPad && !wantWheel;
 
         DeadButtons = 0;
         PedalCaps = 0;
 
+        double steer = AssistedSteer();
+
+        if (wantWheel)
+            Output.FeedWheel(steer, _w.Thr, _w.Brk, _w.Clu, _w.Hb, _w.Buttons);
+
+        if (wantPad)
+            FeedWheelAsPad(current.PadFallback ?? current, steer);
+    }
+
+    /// <summary>Steering through the drift assist, remembering the result.</summary>
+    private double AssistedSteer()
+    {
         double steer = _w.Steer;
         if (_assist != null)
             steer = _assist.Apply(steer, _sim);
         _w.SteerOut = steer;
-        Output.FeedWheel(steer, _w.Thr, _w.Brk, _w.Clu, _w.Hb, _w.Buttons);
+        return steer;
+    }
+
+    private void PlugPadNow()
+    {
+        if (!Output.PadPlugged)
+            Output.PlugPad();
     }
 
     private void FeedPadFace()
@@ -345,15 +402,12 @@ public sealed class Net
         _ => 0
     };
 
-    private void FeedWheelAsPad(GameProfile g)
+    private void FeedWheelAsPad(GameProfile g, double? steerIn = null)
     {
         if (!Output.PadPlugged)
             return;
 
-        double steer = _w.Steer;
-        if (_assist != null)
-            steer = _assist.Apply(steer, _sim);
-        _w.SteerOut = steer;
+        double steer = steerIn ?? AssistedSteer();
 
         if (g.SteerAntiDeadzone > 0.0001 && Math.Abs(steer) > 0.0001)
         {
@@ -1292,11 +1346,11 @@ public sealed class Net
         }
         try
         {
+            // Centre the pad but keep the device node. Destroying it here would
+            // make it reappear under a new /dev/input/eventN on reconnect, and a
+            // game that opened the old node would never see it again.
             if (Output.PadPlugged)
-            {
                 Output.FeedPad(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
-                Output.UnplugPad();
-            }
         }
         catch
         {
@@ -1313,6 +1367,8 @@ public sealed class Net
         UsingPad = false;
         WheelViaPad = false;
         PadBecauseGame = false;
+        WheelOnPad = false;
+        WheelOnWheel = false;
         WheelRate = 0;
         PadRate = 0;
         LastWheelAt = 0;
