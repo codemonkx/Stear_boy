@@ -31,6 +31,7 @@ internal static class StatusSnapshot
             PadMode = net.PadMode,
             WheelViaPad = net.WheelViaPad,
             PadBecauseGame = net.PadBecauseGame,
+            Profile = net.ActiveProfile.Name,
             PeerName = store.PeerName,
             PeerHost = store.PeerHost,
             StatusLine = net.Status,
@@ -51,7 +52,11 @@ internal static class StatusSnapshot
             RightY = (float)pad.Ry,
             LeftTrigger = (float)pad.Lt,
             RightTrigger = (float)pad.Rt,
-            PadButtons = pad.Buttons
+            PadButtons = pad.Buttons,
+            WheelRate = net.WheelRate,
+            PadRate = net.PadRate,
+            WheelAgeMs = RuntimeStatus.AgeOf(net.LastWheelAt, Environment.TickCount),
+            PadAgeMs = RuntimeStatus.AgeOf(net.LastPadAt, Environment.TickCount)
         };
     }
 

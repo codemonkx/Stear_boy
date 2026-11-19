@@ -69,6 +69,16 @@ public sealed class Net
     public volatile string StatusLine = "Open Gyropad on your phone and tap Connect";
     public volatile int SettingsAt;
     public volatile int DeadButtons;
+
+    /// <summary>Accepted wheel-family packets in the last one-second window.</summary>
+    public volatile int WheelRate;
+
+    /// <summary>Accepted gamepad packets in the last one-second window.</summary>
+    public volatile int PadRate;
+
+    /// <summary><see cref="Environment.TickCount"/> of the last accepted packet of each kind, or 0.</summary>
+    public volatile int LastWheelAt;
+    public volatile int LastPadAt;
     public volatile int PedalCaps;
     public volatile int PedalLabels;
     public volatile int PedalLabels2;
@@ -1303,6 +1313,10 @@ public sealed class Net
         UsingPad = false;
         WheelViaPad = false;
         PadBecauseGame = false;
+        WheelRate = 0;
+        PadRate = 0;
+        LastWheelAt = 0;
+        LastPadAt = 0;
         OnChanged?.Invoke();
     }
 
@@ -1361,6 +1375,8 @@ public sealed class Net
 
         var any = new IPEndPoint(IPAddress.Any, InputPort);
         int packets = 0;
+        int wheelPackets = 0;
+        int padPackets = 0;
         int rateFrom = Environment.TickCount;
         try
         {
@@ -1631,11 +1647,26 @@ public sealed class Net
             Route(isPad);
             _telemTo = remote;
 
+            if (isPad)
+            {
+                padPackets++;
+                LastPadAt = Environment.TickCount;
+            }
+            else
+            {
+                wheelPackets++;
+                LastWheelAt = Environment.TickCount;
+            }
+
             packets++;
             if (Environment.TickCount - rateFrom >= 1000)
             {
                 _w.Rate = packets;
+                WheelRate = wheelPackets;
+                PadRate = padPackets;
                 packets = 0;
+                wheelPackets = 0;
+                padPackets = 0;
                 rateFrom = Environment.TickCount;
             }
         }

@@ -112,6 +112,20 @@ public class UinputTests
         Assert.Equal(0, Uinput.Stick(double.NaN));
     }
 
+    [Theory]
+    [InlineData(1.0, -32767)]   // up on the phone -> negative evdev value
+    [InlineData(0.5, -16384)]
+    [InlineData(0.0, 0)]
+    [InlineData(-0.5, 16384)]
+    [InlineData(-1.0, 32767)]   // down on the phone -> positive evdev value
+    public void VerticalStickAxesFlipIntoEvdevsDownPositiveSign(double xinput, int expected)
+    {
+        // The network layer keeps XInput/vJoy's positive-is-up convention, but
+        // Linux evdev ABS_Y and ABS_RY are positive down.
+        Assert.Equal(expected, Uinput.StickY(xinput));
+        Assert.Equal(Uinput.Stick(0.0 - xinput), Uinput.StickY(xinput));
+    }
+
     [Fact]
     public void PedalsAndTriggersUseTheirFullRange()
     {

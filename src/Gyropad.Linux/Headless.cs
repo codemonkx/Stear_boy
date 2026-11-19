@@ -323,6 +323,10 @@ internal sealed class Headless
 
     private string DescribeInput()
     {
+        string route = "route  " + StatusSnapshot.Persona(_net)
+            + "   (wheel " + _net.WheelRate.ToString(CultureInfo.InvariantCulture) + "/s, gamepad "
+            + _net.PadRate.ToString(CultureInfo.InvariantCulture) + "/s)";
+
         string wheel = string.Format(
             CultureInfo.InvariantCulture,
             "input  steer {0}  throttle {1:0.00}  brake {2:0.00}  clutch {3:0.00}  handbrake {4:0.00}  buttons 0x{5:x4}",
@@ -334,7 +338,7 @@ internal sealed class Headless
             Fit(_pad.Lx), Fit(_pad.Ly), Fit(_pad.Rx), Fit(_pad.Ry),
             _pad.Lt, _pad.Rt, _pad.Buttons);
 
-        return wheel + Environment.NewLine + "       " + pad;
+        return route + Environment.NewLine + wheel + Environment.NewLine + "       " + pad;
     }
 
     private static string Fit(double value) => value.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture);

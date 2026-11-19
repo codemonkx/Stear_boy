@@ -43,6 +43,7 @@ public class RuntimeStatusTests : IDisposable
             PadMode = true,
             WheelViaPad = true,
             PadBecauseGame = true,
+            Profile = "Forza Horizon 5",
             PeerName = "Pixel_7",
             PeerHost = "192.168.1.50",
             StatusLine = "linked",
@@ -63,7 +64,11 @@ public class RuntimeStatusTests : IDisposable
             RightY = -0.3f,
             LeftTrigger = 0.4f,
             RightTrigger = 0.6f,
-            PadButtons = 0x1000
+            PadButtons = 0x1000,
+            WheelRate = 60,
+            PadRate = 7,
+            WheelAgeMs = 25,
+            PadAgeMs = 900
         };
 
         status.Write();
@@ -78,6 +83,7 @@ public class RuntimeStatusTests : IDisposable
         Assert.True(read.PadMode);
         Assert.True(read.WheelViaPad);
         Assert.True(read.PadBecauseGame);
+        Assert.Equal("Forza Horizon 5", read.Profile);
         Assert.Equal("Pixel_7", read.PeerName);
         Assert.Equal("192.168.1.50", read.PeerHost);
         Assert.Equal("linked", read.StatusLine);
@@ -98,6 +104,10 @@ public class RuntimeStatusTests : IDisposable
         Assert.Equal(0.4f, read.LeftTrigger, 3);
         Assert.Equal(0.6f, read.RightTrigger, 3);
         Assert.Equal(0x1000, read.PadButtons);
+        Assert.Equal(60, read.WheelRate);
+        Assert.Equal(7, read.PadRate);
+        Assert.Equal(25, read.WheelAgeMs);
+        Assert.Equal(900, read.PadAgeMs);
     }
 
     [Fact]
@@ -169,5 +179,40 @@ public class RuntimeStatusTests : IDisposable
     public void MissingStartTimeMeansZeroUptime()
     {
         Assert.Equal(TimeSpan.Zero, new RuntimeStatus().Uptime);
+    }
+
+    [Theory]
+    [InlineData(false, false, false, false, "", 0, "starting")]
+    [InlineData(false, false, false, false, "", 5005, "waiting for the phone, port 5005")]
+    [InlineData(true, true, false, false, "Forza Horizon 5", 5005, "gamepad (Xbox 360)")]
+    [InlineData(true, true, false, true, "Forza Horizon 5", 5005, "gamepad, because Forza Horizon 5 needs one")]
+    [InlineData(true, false, true, false, "Forza Horizon 5", 5005, "wheel translated to a gamepad for Forza Horizon 5")]
+    [InlineData(true, false, true, false, "", 5005, "wheel translated to a gamepad for the running title")]
+    [InlineData(true, false, false, false, "", 5005, "wheel / joystick")]
+    public void RouteDescriptionExplainsWhichDeviceGetsTheInput(
+        bool connected, bool padMode, bool wheelViaPad, bool padBecauseGame,
+        string profile, int port, string expected)
+    {
+        var status = new RuntimeStatus
+        {
+            Connected = connected,
+            PadMode = padMode,
+            WheelViaPad = wheelViaPad,
+            PadBecauseGame = padBecauseGame,
+            Profile = profile,
+            InputPort = port
+        };
+
+        Assert.Equal(expected, status.RouteDescription);
+    }
+
+    [Fact]
+    public void PacketAgeTreatsZeroAsNeverAndHandlesTickWrap()
+    {
+        Assert.Equal(-1, RuntimeStatus.AgeOf(0, 12345));
+        Assert.Equal(150, RuntimeStatus.AgeOf(100, 250));
+
+        // Environment.TickCount wraps through int.MinValue after ~24.8 days.
+        Assert.Equal(1, RuntimeStatus.AgeOf(int.MaxValue, int.MinValue));
     }
 }

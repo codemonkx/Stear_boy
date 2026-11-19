@@ -243,10 +243,12 @@ public sealed class UinputBridge : IOutputDevice, IDisposable
             if (device == null || device.Failed)
                 return;
 
+            // Callers use the Windows/XInput sign (positive is up); evdev's
+            // ABS_Y and ABS_RY are positive down, so the vertical axes flip here.
             device.PushAbs(Uinput.AbsX, Uinput.Stick(lx));
-            device.PushAbs(Uinput.AbsY, Uinput.Stick(ly));
+            device.PushAbs(Uinput.AbsY, Uinput.StickY(ly));
             device.PushAbs(Uinput.AbsRx, Uinput.Stick(rx));
-            device.PushAbs(Uinput.AbsRy, Uinput.Stick(ry));
+            device.PushAbs(Uinput.AbsRy, Uinput.StickY(ry));
             device.PushAbs(Uinput.AbsZ, Uinput.Trigger(lt));
             device.PushAbs(Uinput.AbsRz, Uinput.Trigger(rt));
 

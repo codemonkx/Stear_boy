@@ -50,11 +50,16 @@ internal static class StatusReport
         Console.WriteLine("device     " + status.DeviceStatus
             + (status.DeviceDetail.Length > 0 ? " - " + status.DeviceDetail : ""));
 
+        Console.WriteLine("route      " + status.RouteDescription);
+
         if (status.InputFault.Length > 0)
             Console.WriteLine("fault      " + status.InputFault);
 
         if (status.Connected)
         {
+            Console.WriteLine("packets    wheel " + Rate(status.WheelRate, status.WheelAgeMs)
+                + "   gamepad " + Rate(status.PadRate, status.PadAgeMs));
+
             Console.WriteLine(string.Format(
                 CultureInfo.InvariantCulture,
                 "steer      {0}  throttle {1:0.00}  brake {2:0.00}  clutch {3:0.00}  handbrake {4:0.00}  buttons 0x{5:x4}",
@@ -78,6 +83,20 @@ internal static class StatusReport
     }
 
     private static string Pretty(string name) => name.Replace('_', ' ');
+
+    private static string Rate(int rate, int ageMs)
+    {
+        if (ageMs < 0)
+            return "none yet";
+
+        // The counter is a one-second window; a stale window means packets stopped.
+        int live = ageMs > 1500 ? 0 : rate;
+        string ago = ageMs >= 1000
+            ? (ageMs / 1000.0).ToString("0.0", CultureInfo.InvariantCulture) + " s"
+            : ageMs.ToString(CultureInfo.InvariantCulture) + " ms";
+
+        return live.ToString(CultureInfo.InvariantCulture) + "/s, last " + ago + " ago";
+    }
 
     private static string Fit(float value)
         => value.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture);

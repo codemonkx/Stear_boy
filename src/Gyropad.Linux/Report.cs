@@ -139,11 +139,14 @@ internal static class Report
         text.AppendLine("ports     input UDP " + status.InputPort + "  pairing TCP " + status.PairPort);
         text.AppendLine("device    " + status.DeviceStatus
             + (status.DeviceDetail.Length > 0 ? " - " + status.DeviceDetail : ""));
+        text.AppendLine("route     " + status.RouteDescription);
         if (status.InputFault.Length > 0)
             text.AppendLine("fault     " + status.InputFault);
 
         if (status.Connected)
         {
+            text.AppendLine("packets   wheel " + Rate(status.WheelRate, status.WheelAgeMs)
+                + "   gamepad " + Rate(status.PadRate, status.PadAgeMs));
             text.AppendLine(string.Format(
                 CultureInfo.InvariantCulture,
                 "steer     {0}  throttle {1:0.00}  brake {2:0.00}  clutch {3:0.00}  handbrake {4:0.00}  buttons 0x{5:x4}",
@@ -256,6 +259,19 @@ internal static class Report
     }
 
     private static string Pretty(string name) => name.Replace('_', ' ');
+
+    private static string Rate(int rate, int ageMs)
+    {
+        if (ageMs < 0)
+            return "none yet";
+
+        int live = ageMs > 1500 ? 0 : rate;
+        string ago = ageMs >= 1000
+            ? (ageMs / 1000.0).ToString("0.0", CultureInfo.InvariantCulture) + " s"
+            : ageMs.ToString(CultureInfo.InvariantCulture) + " ms";
+
+        return live.ToString(CultureInfo.InvariantCulture) + "/s, last " + ago + " ago";
+    }
 
     private static string Fit(float value)
         => value.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture);

@@ -390,6 +390,10 @@ public class NetTests
         Assert.Equal("Connected", h.Net.StatusLine);
         Assert.False(h.Output.PadPlugged);
         Assert.False(h.Net.UsingPad);
+
+        // The diagnostics in --status use these to prove which packet family arrives.
+        Assert.True(Harness.WaitFor(() => h.Net.LastWheelAt != 0));
+        Assert.Equal(0, h.Net.LastPadAt);
     }
 
     [Fact]
@@ -450,6 +454,8 @@ public class NetTests
         // Switching persona zeroes the wheel so a held steering axis cannot stick.
         WheelFrame lastWheel = h.Output.LastWheel!;
         Assert.Equal(0.0, lastWheel.Steer);
+
+        Assert.True(Harness.WaitFor(() => h.Net.LastPadAt != 0));
     }
 
     [Fact]

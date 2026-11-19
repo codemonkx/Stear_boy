@@ -198,6 +198,13 @@ internal static class Uinput
         return (int)Math.Round(scaled, MidpointRounding.AwayFromZero);
     }
 
+    /// <summary>
+    /// Vertical stick axis. The network layer keeps the Windows convention
+    /// (positive is up, as XInput and vJoy report it), while Linux evdev ABS_Y
+    /// is positive down. Every vertical stick value crosses this boundary.
+    /// </summary>
+    public static int StickY(double value) => Stick(0.0 - value);
+
     /// <summary>Unipolar pedal axis: 0..1 to 0..32767.</summary>
     public static int Pedal(double value)
         => (int)Math.Round(Clamp(value, 0.0, 1.0) * 32767.0, MidpointRounding.AwayFromZero);

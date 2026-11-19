@@ -1,4 +1,4 @@
-Gyropad 1.39.5 - Linux port
+﻿Gyropad 1.39.6 - Linux port
 ===========================
 
 Turns your phone into a steering wheel or gamepad for PC racing games.
@@ -34,8 +34,8 @@ On the Linux machine run:
 
     uname -m
 
-  x86_64   -> gyropad-1.39.5-linux-x64.tar.gz
-  aarch64  -> gyropad-1.39.5-linux-arm64.tar.gz
+  x86_64   -> gyropad-1.39.6-linux-x64.tar.gz
+  aarch64  -> gyropad-1.39.6-linux-arm64.tar.gz
 
 Download it from the project's Releases page. The repository is private, so
 sign in first, or copy the file over from another machine.
@@ -44,8 +44,8 @@ sign in first, or copy the file over from another machine.
 1. Extract
 ----------
     mkdir -p ~/Applications
-    tar -xzf gyropad-1.39.5-linux-x64.tar.gz -C ~/Applications
-    cd ~/Applications/gyropad-1.39.5-linux-x64
+    tar -xzf gyropad-1.39.6-linux-x64.tar.gz -C ~/Applications
+    cd ~/Applications/gyropad-1.39.6-linux-x64
 
 Keep this folder: the app always runs from it.
 
@@ -167,6 +167,16 @@ If evtest is not installed:
 
 jstest, from the "joystick" package, shows the same thing for /dev/input/jsN.
 
+While a control is moving, ./Gyropad --status prints two lines that say which
+device the phone input is driving:
+
+    route      wheel / joystick
+    packets    wheel 59/s, last 12 ms ago   gamepad none yet
+
+If "packets" stays at "none yet" in Racepad, the phone is not sending wheel
+frames. If it counts up but the game ignores the device, the route line names
+the device to select in the game's controls.
+
 
 6. Try a game
 -------------
@@ -286,6 +296,20 @@ Steam does not detect the pad
     Check Steam's controller settings while Gyropad is running. The pad is
     an Xbox 360 compatible device.
 
+Racepad works on the phone but the game ignores it
+    Run ./Gyropad --status while moving the wheel. The "packets" line proves
+    the phone data is arriving (wheel N/s) and the "route" line names the
+    device being fed. If route says "wheel / joystick", the game has to be
+    pointed at the "Gyropad Wheel" joystick in its own controls, because a
+    wheel is a joystick, not an Xbox controller. Titles on the built-in
+    "needs a gamepad" list (Forza, NFS, GRID, ...) already receive Racepad
+    input on the Xbox 360 device.
+
+Sticks were upside down before 1.39.6
+    Fixed in 1.39.6. Left/right was correct, but up and down were reversed on
+    both analog sticks because Linux counts the vertical axis downward.
+    Check ./Gyropad --version and use 1.39.6 or newer.
+
 Steering is reversed in one game
     Invert it in the game's own bindings; the axis sign matches the Windows
     build on purpose.
@@ -343,7 +367,7 @@ A systemd user service starts the headless link when you log in. Create
     After=network-online.target
 
     [Service]
-    ExecStart=%h/Applications/gyropad-1.39.5-linux-x64/Gyropad --headless --pair auto
+    ExecStart=%h/Applications/gyropad-1.39.6-linux-x64/Gyropad --headless --pair auto
     Restart=on-failure
 
     [Install]
@@ -364,7 +388,7 @@ in:
 
 12. Uninstall
 -------------
-    rm -rf ~/Applications/gyropad-1.39.5-linux-x64
+    rm -rf ~/Applications/gyropad-1.39.6-linux-x64
     rm -rf ~/.config/gyropad
 
 And, only if you installed the udev rule:

@@ -32,6 +32,9 @@ public sealed class RuntimeStatus
 
     public bool PadBecauseGame { get; set; }
 
+    /// <summary>Matched title name, or empty when the generic profile applies.</summary>
+    public string Profile { get; set; } = "";
+
     public string PeerName { get; set; } = "";
 
     public string PeerHost { get; set; } = "";
@@ -73,6 +76,47 @@ public sealed class RuntimeStatus
     public float RightTrigger { get; set; }
 
     public int PadButtons { get; set; }
+
+    /// <summary>Accepted wheel-family packets in the last one-second window.</summary>
+    public int WheelRate { get; set; }
+
+    /// <summary>Accepted gamepad packets in the last one-second window.</summary>
+    public int PadRate { get; set; }
+
+    /// <summary>Milliseconds since the last wheel-family packet, or -1 if none arrived.</summary>
+    public int WheelAgeMs { get; set; } = -1;
+
+    /// <summary>Milliseconds since the last gamepad packet, or -1 if none arrived.</summary>
+    public int PadAgeMs { get; set; } = -1;
+
+    /// <summary>
+    /// Which virtual device the phone input is currently driving, in the words
+    /// used by <c>--status</c> and <c>--report</c>.
+    /// </summary>
+    public string RouteDescription
+    {
+        get
+        {
+            if (!Connected)
+                return InputPort > 0 ? "waiting for the phone, port " + InputPort : "starting";
+
+            string game = Profile.Length > 0 ? Profile : "the running title";
+
+            if (PadMode)
+                return PadBecauseGame
+                    ? "gamepad, because " + game + " needs one"
+                    : "gamepad (Xbox 360)";
+
+            if (WheelViaPad)
+                return "wheel translated to a gamepad for " + game;
+
+            return "wheel / joystick";
+        }
+    }
+
+    /// <summary>Milliseconds since a tick count, or -1 when it was never set.</summary>
+    public static int AgeOf(int lastAt, int now)
+        => lastAt == 0 ? -1 : Math.Max(0, unchecked(now - lastAt));
 
     public TimeSpan Uptime
     {

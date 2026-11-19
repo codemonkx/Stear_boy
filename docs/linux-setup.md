@@ -27,8 +27,8 @@ SDK.
 
 ```bash
 mkdir -p ~/Applications
-tar -xzf gyropad-1.39.5-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.5-linux-x64
+tar -xzf gyropad-1.39.6-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.6-linux-x64
 
 ./Gyropad --doctor          # environment check
 sudo ./install-udev-rule.sh # once, only if the doctor reports a permission problem
@@ -70,7 +70,7 @@ when something would stop the app from working.
 
 ```
 $ ./Gyropad --doctor
-Gyropad 1.39.5 doctor
+Gyropad 1.39.6 doctor
 
 System
   [ ok ] runtime  - .NET 8.0.x
@@ -139,7 +139,7 @@ Description=Gyropad phone link
 After=network-online.target
 
 [Service]
-ExecStart=%h/Applications/gyropad-1.39.5-linux-x64/Gyropad --headless --pair auto
+ExecStart=%h/Applications/gyropad-1.39.6-linux-x64/Gyropad --headless --pair auto
 Restart=on-failure
 
 [Install]
@@ -182,6 +182,11 @@ One deliberate difference from Windows: when a title is on the built-in
 "needs a gamepad" list (for example Forza), the wheel input is translated onto
 the gamepad device. Windows fed vJoy, which some titles ignore; on Linux the
 game gets the controller it asks for.
+
+Racepad is a wheel, so its device is a joystick rather than an Xbox
+controller. If a Racepad control does nothing in a game, run `--status` while
+moving it: the `packets` line proves the frames arrive, and the `route` line
+names the device the game must be pointed at.
 
 ## Configuration
 
@@ -228,7 +233,9 @@ and usually works when inbound traffic is blocked.
 | `Gyropad could not open a window` | no desktop session (SSH, headless server); use `./Gyropad --headless --pair auto` |
 | pairing is declined in headless mode | stdin is not a terminal, so `--pair ask` cannot prompt; use `--pair auto` |
 | gamepad is not detected by Steam | make sure the title is launched after Gyropad created the device; check `evtest` or `jstest` |
-| steering is inverted in one game | invert it in the game's own bindings; the axis sign matches vJoy on Windows |
+| Racepad does nothing in a game | run `--status` and read `route` and `packets`; bind the `Gyropad Wheel` joystick in the game, or use a title that gets the gamepad persona |
+| analog sticks were upside down | fixed in 1.39.6; Linux counts the vertical axis downward, so both stick Y axes are flipped now |
+| steering is inverted in one game | invert it in the game's own bindings; the steering axis sign matches vJoy on Windows |
 
 Useful diagnostics:
 
