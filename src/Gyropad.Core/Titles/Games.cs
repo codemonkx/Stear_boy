@@ -1128,7 +1128,10 @@ public static class Games
                 listing = true;
                 foreach (ProcInfo process in processes)
                 {
-                    if (IsShell(process.Name))
+                    // The original lowercased every process name before the
+                    // shell test; /proc keeps the on-disk casing, so do the
+                    // same here or capitalised shells leak into the list.
+                    if (IsShell(process.Name.ToLowerInvariant()))
                         continue;
 
                     candidates.Add(new Candidate

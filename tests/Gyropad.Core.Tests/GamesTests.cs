@@ -113,6 +113,17 @@ public class GamesTests
     }
 
     [Fact]
+    public void ShellProcessesAreFilteredRegardlessOfCase()
+    {
+        // /proc preserves the casing of argv[0], so a shell executable can show
+        // up as "Steam" even though the ignore list is lowercase.
+        Use(Proc("Steam", 500), Proc("Discord", 400), Proc("MineCraft", 300));
+
+        Assert.Equal(["MineCraft"], Games.Candidates.Select(c => c.Exe));
+        Assert.Equal("MineCraft", Games.UnknownExe);
+    }
+
+    [Fact]
     public void CandidatesAreRequestedWhenAskedEvenWithAMatch()
     {
         Games.ProcessSource = new FakeProcesses(Proc("acs", 400), Proc("someapp", 200));

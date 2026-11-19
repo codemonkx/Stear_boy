@@ -61,7 +61,11 @@ internal static class Report
         RuntimeStatus? status = TryReadStatus();
 
         text.AppendLine("== Environment (--doctor) ==");
-        foreach (string line in Doctor.Collect(skipPorts: status != null).Lines)
+        // Only skip the port checks when a live instance really owns them; a
+        // stale runtime.json must not hide that the ports are free (or taken
+        // by something else).
+        bool live = status != null && RuntimeStatus.IsProcessAlive(status.Pid);
+        foreach (string line in Doctor.Collect(skipPorts: live).Lines)
             text.AppendLine(line);
         text.AppendLine();
 
