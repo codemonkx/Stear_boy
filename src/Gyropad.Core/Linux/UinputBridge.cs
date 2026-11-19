@@ -1,3 +1,4 @@
+using System;
 using Gyropad.Core.Transport;
 
 namespace Gyropad.Core.Linux;
@@ -35,6 +36,15 @@ public sealed class UinputBridge : IOutputDevice, IDisposable
     private const ushort PadProduct = 0x028e;
     private const ushort PadVersion = 0x0110;
     private const string PadName = "Microsoft X-Box 360 pad";
+
+    /// <summary>
+    /// True for the kernel names this bridge gives its own devices. The pad
+    /// persona deliberately uses the Xbox 360 name, so diagnostics cannot just
+    /// look for "Gyropad" in the name.
+    /// </summary>
+    public static bool IsVirtualDeviceName(string name) =>
+        string.Equals(name, WheelName, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(name, PadName, StringComparison.OrdinalIgnoreCase);
 
     private static readonly Uinput.Axis[] WheelAxes =
     [

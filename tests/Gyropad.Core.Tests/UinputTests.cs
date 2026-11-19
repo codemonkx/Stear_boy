@@ -183,6 +183,18 @@ public class UinputTests
     }
 
     [Fact]
+    public void VirtualDeviceNamesCoverBothPersonas()
+    {
+        // --report lists only these names in /sys/class/input; the pad keeps the
+        // Xbox 360 name, so a "Gyropad" substring test would miss it.
+        Assert.True(UinputBridge.IsVirtualDeviceName("Gyropad Wheel"));
+        Assert.True(UinputBridge.IsVirtualDeviceName("Microsoft X-Box 360 pad"));
+        Assert.True(UinputBridge.IsVirtualDeviceName("microsoft x-box 360 pad"));
+        Assert.False(UinputBridge.IsVirtualDeviceName("AT Translated Set 2 keyboard"));
+        Assert.False(UinputBridge.IsVirtualDeviceName(""));
+    }
+
+    [Fact]
     public void UinputDevicesDegradeQuietlyOffLinux()
     {
         using var bridge = new UinputBridge();

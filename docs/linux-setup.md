@@ -27,8 +27,8 @@ SDK.
 
 ```bash
 mkdir -p ~/Applications
-tar -xzf gyropad-1.39.4-linux-x64.tar.gz -C ~/Applications
-cd ~/Applications/gyropad-1.39.4-linux-x64
+tar -xzf gyropad-1.39.5-linux-x64.tar.gz -C ~/Applications
+cd ~/Applications/gyropad-1.39.5-linux-x64
 
 ./Gyropad --doctor          # environment check
 sudo ./install-udev-rule.sh # once, only if the doctor reports a permission problem
@@ -70,7 +70,7 @@ when something would stop the app from working.
 
 ```
 $ ./Gyropad --doctor
-Gyropad 1.39.4 doctor
+Gyropad 1.39.5 doctor
 
 System
   [ ok ] runtime  - .NET 8.0.x
@@ -139,7 +139,7 @@ Description=Gyropad phone link
 After=network-online.target
 
 [Service]
-ExecStart=%h/Applications/gyropad-1.39.4-linux-x64/Gyropad --headless --pair auto
+ExecStart=%h/Applications/gyropad-1.39.5-linux-x64/Gyropad --headless --pair auto
 Restart=on-failure
 
 [Install]

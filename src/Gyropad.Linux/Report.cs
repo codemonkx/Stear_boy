@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using Gyropad.Core.Config;
+using Gyropad.Core.Linux;
 using Gyropad.Core.State;
 
 namespace Gyropad.Linux;
@@ -191,7 +192,9 @@ internal static class Report
             {
                 string device = Path.Combine(dir, "device");
                 string name = ReadTrim(Path.Combine(device, "name"));
-                if (name.Length == 0 || !name.Contains(AppInfo.Name, StringComparison.OrdinalIgnoreCase))
+                // The pad persona is named "Microsoft X-Box 360 pad" on purpose,
+                // so match against the bridge's own names rather than the app name.
+                if (name.Length == 0 || !UinputBridge.IsVirtualDeviceName(name))
                     continue;
 
                 any = true;
